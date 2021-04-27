@@ -6,18 +6,14 @@
 =#
 
 
-function plt_full3d(x::AbstractArray,n::Int;x_exact=[]::AbstractArray)
+function plt_orbit(x::AbstractArray;lab="Computed")
     # Plot the solution in 3D
-    plt = plot3d(x[1,:],x[2,:],x[3,:],label="Computed",guidefontsize=16)
-    # If provided plot the exact solution
-    if !isempty(x_exact)
-        plot3d!(plt,x_exact[1,:],x_exact[2,:],x_exact[3,:],line=(:dot),label="Exact")
-    end
+    plt = plot3d(x[1,:],x[2,:],x[3,:],label=lab,guidefontsize=16)
     xlabel!("x"); ylabel!("y");
     return plt
 end
 
-function plt_gyroradius(v::Array,B::Function,t::Array;m=1,q=1)
+function plt_gyroradius(v::Array,B::Function,t::Array)
     # Gyoradius
     n = size(v)[2]
     gr = zeros(n)
@@ -28,6 +24,7 @@ function plt_gyroradius(v::Array,B::Function,t::Array;m=1,q=1)
     xlabel!("x")
     xlabel!("y")
 end
+
 
 
 #=
