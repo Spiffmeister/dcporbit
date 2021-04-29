@@ -7,14 +7,23 @@ mutable struct particle
     # Position and time things
     x   :: Array{Float64}
     v   :: Array{Float64}
-    # gc  :: Array{Float64}
+    gc  :: Bool
     t   :: Array{Float64}
     Δt  :: Float64
     # Functions
     dvdt :: Function
     Bfield :: Union{Array{Function},Function}
     B :: Array{Float64}
-    lvol :: Int
+    lvol :: Vector{Int}
+    # Constructor to build easier
+    function particle(x,v,mode,t,Δt,dvdt,Bfield,lvol;gc_initial=true)
+        typeof(Bfield) <: Function ? B = Bfield : B = Bfield[lvol]
+        if gc_initial
+            # Convert to FO position
+            x = x - guiding_center(x,v,B)
+        end
+        new(x,v,mode,[t],Δt,dvdt,Bfield,B(x),[lvol])
+    end
 end
 
 

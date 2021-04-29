@@ -11,8 +11,14 @@ mutable struct exact_particle
     t_boundary  :: Vector{Float64}
 end
 
-function exactsolve(x₀::Vector{Float64},v₀::Vector{Float64},t::Vector{Float64},Bfield::Function;crossing=true,eventfn=Nothing)
+function exactsolve(x₀::Vector{Float64},v₀::Vector{Float64},t::Vector{Float64},Bfield::Union{Function,Array{Function}};crossing=true,eventfn=Nothing)
     # Works for static fields
+    if typeof(Bfield) <: Function
+        B = Bfield
+    elseif typeof(Bfield) <: Array
+        B = Bfield[1]
+    end
+
     ω = abs(q)/m * norm(B(x₀)) #Specific to |B|=1
 
     x = x_b = x₀

@@ -3,18 +3,29 @@
 
 
 
-@everywhere function integrate(p::Union{particle,Array{particle}},t_f;eventfn=Nothing,method="RK4")
+function integrate!(p::Union{particle,Array{particle}},t_f;eventfn=nothing,method="RK4")
 
     if method=="RK4"
         integrator = RK4
     end
 
+    if !p.gc
+        p.x[:] = p.x[:] - guiding_center(p.x[:],p.v[:],p.Bfield)
+    end
+
+    Btype = typeof(p.Bfield)
+
     while p.t[end] < t_f
         xv = vcat(p.x[:,end], p.v[:,end])
-        tᵢ = [p.t[end], p.t[end]+Δt]
-        B = p.Bfield[lvol]
+        tᵢ = [p.t[end], p.t[end]+p.Δt]
+
+        if Btype <: Array
+            B = p.Bfield[p.lvol[end]]
+        else
+            B = p.Bfield
+        end
         
-        fₓ(x,t) = p.dvdt(x,t,B)
+        fₓ(x,t) = p.dvdt(x,t,B(p.x[end,:]))
         
         x_tmp, t_tmp, Δt_tmp, crossing = integrator(fₓ,xv,tᵢ,eventfn=eventfn)
         
@@ -38,7 +49,7 @@ end
 
 
 #== INTEGRATORS ==#
-function RK4(fₓ::Function,x₀::Vector{Float64},t::Vector{Float64};eventfn=Nothing,tol=1.e-15)
+function RK4(fₓ::Function,x₀::Vector{Float64},t::Vector{Float64};eventfn=nothing,tol=1.e-15)
     # Standard RK4 with discontinuity detection
 
     s = 4 #Stages
@@ -78,7 +89,7 @@ function RK4(fₓ::Function,x₀::Vector{Float64},t::Vector{Float64};eventfn=Not
                 t[i+1] = t[i] + h
                 x[:,i+1] = xn
                 crossing = true
-            if event == 0
+            elseif event == 0
                 crossing = true
             end
         end

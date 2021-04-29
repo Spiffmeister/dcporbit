@@ -7,10 +7,11 @@ module orbit
     using Distributed
     pyplot()
 
-    include("Integrators.jl")
-    include("OrbitEqns.jl")
     include("Particle.jl")
+    include("OrbitEqns.jl")
+    include("Integrators.jl")
 
-    export exactsolve,integrate
+    export exactsolve,integrate!,particle
+    export MagneticForce
 
 end
