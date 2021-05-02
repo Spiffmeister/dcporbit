@@ -30,7 +30,8 @@ function exactsolve(x₀::Vector{Float64},v₀::Vector{Float64},t::Vector{Float6
     if !crossing
         # If there are no crossings then solve the entire system at once
         B = Bfield(x₀)
-        x = exact_x(v₀,X₀,b,t,ω)
+        b = magcoords(v₀,B)
+        x = exact_x(v₀,x₀,b,t,ω)
         v = exact_v(v₀,b,t,ω)
     end
 
@@ -90,11 +91,11 @@ end
     Supporting functions
 =#
 function exact_x(v₀,X₀,b,tᵢ,ω) #position
-    x = v_para(v₀,b).*tᵢ' + 1/ω * norm(v₀)*(-b[3].*sin(ω*tᵢ)' + b[2].*cos(ω*tᵢ)') + X₀
+    x = v_para(v₀,b)*tᵢ' + 1/ω * norm(v₀)*(-b[3] * sin.(ω*tᵢ)' + b[2] * cos.(ω*tᵢ)') .+ X₀
     return x
 end
 function exact_v(v₀,b,tᵢ,ω)
-    v = v_para(v₀,b) - norm(v₀)*(b[3].*cos(ω*tᵢ)' + b[2].*sin(ω*tᵢ)')
+    v = v_para(v₀,b) .- norm(v₀)*(b[3] * cos.(ω*tᵢ)' + b[2] * sin.(ω*tᵢ)')
     return v
 end
 function v_para(v₀,b) #parallel velocity

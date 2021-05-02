@@ -16,10 +16,10 @@ tol = 1.e-14
 
 Bfield(x) = [0.,0.,1.]
 
+
 p = particle(x₀,v₀,guidingcentre,t₀,Δt,MagneticForce,Bfield,1)
 
 integrate!(p,t_f)
-
 
 
 exactsolve(x₀,v₀,p.t,Bfield,crossing=false)
