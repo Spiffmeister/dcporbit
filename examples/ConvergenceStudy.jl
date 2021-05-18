@@ -3,27 +3,21 @@
 =#
 
 # Is this a guiding center intialisation?
-guidingcenter = false
 
-gc₀ = [0.,0.,0.]
-v₀ = [1.,0.,0.]
 
-t₀ = 0.
-t_f = 1.
-Δt = 1.e-1
 tol = 1.e-14
 
-# function Bfield(x)
-#     α = pi/6
-#     if x[3] > 0
-#         B = [cos(α),-sin(α),0.]
-#     else
-#         B = [cos(α),sin(α),0.]
-#     end
-#     return B
-# end
 
-α = pi/6
+# Simulation parameters
+nparts = 8
+
+guidingcenter = false
+gc₀ = [0., 0., 0.]
+v₀ = [1.,0.,0.]
+Δt = [2^-i for i in 1:nparts]
+t_f = 1.
+
+α = π/6
 B₁(x) = [cos(α),-sin(α),0.]
 B₂(x) = [cos(α),sin(α),0.]
 
@@ -35,10 +29,17 @@ function event(xv,t)
 end
 
 
-p = particle(x₀,v₀,t₀,Δt,MagneticForce,Bfield,Bfield(x₀),1)
 
 
-integrate(p,t_f,eventfn=eventfn)
+f = sim(nparts,gc₀,v₀,guidingcenter,Δt,dvdt,Bfield,1)
 
 
 
+particle(x₀,v₀,guidingcentre,Δt,MagneticForce,Bfield,1)
+
+
+# integrate(p,t_f,eventfn=eventfn)
+
+
+
+# f = [particle(x₀,v₀,guidingcenter,[2^-i for i in 1:nparts]),]

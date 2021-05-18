@@ -2,15 +2,6 @@
     Full orbit and gyrocenter equations
 =#
 
-mutable struct exact_particle
-    x           :: Array{Float64}
-    v           :: Array{Float64}
-    x_boundary  :: Array{Float64}
-    v_boundary  :: Array{Float64}
-    t           :: Vector{Float64}
-    t_boundary  :: Vector{Float64}
-end
-
 function exactsolve(x₀::Vector{Float64},v₀::Vector{Float64},t::Vector{Float64},Bfield::Union{Function,Array{Function}};crossing=true,eventfn=Nothing)
     # Works for static fields
     if typeof(Bfield) <: Function

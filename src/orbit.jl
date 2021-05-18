@@ -3,6 +3,7 @@ module orbit
     using LinearAlgebra
     # using Roots
     using Plots
+    using LaTeXStrings
     using JLD2
     using Distributed
     pyplot()
@@ -10,8 +11,10 @@ module orbit
     include("Particle.jl")
     include("OrbitEqns.jl")
     include("Integrators.jl")
+    include("Plotting.jl")
 
-    export exactsolve,integrate!,particle
+    export sim,particle,exact_particle
+    export exactsolve,integrate!
     export MagneticForce
 
 end
