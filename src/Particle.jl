@@ -3,9 +3,24 @@
 =#
 const q = m = 1.
 
-ArrayFloat  = Union{Array{Float64},Float64}
+ArrayFloat      = Union{Vector{Float64},Vector{Vector{Float64}}}
+ArrayFunction   = Union{Array{Function},Function}
 # ArrayBool   = Union{Array{Bool},Bool}
 
+
+struct forces
+    # Set up the ODEs for the problem
+    # Set up the problem
+    MagneticField   :: Union{Function,Vector{Function}}
+    EOM             :: Function
+    EOM_GC          :: Function
+    event           :: Union{Function,Nothing}
+    # Event function should return the index of the field to choose
+    function forces(MagField;event=nothing)
+        new(MagField,MagneticForce,MagneticForce_GC,event)
+    end
+
+end
 
 
 mutable struct particle
@@ -16,20 +31,29 @@ mutable struct particle
     t           :: Array{Float64}
     Δt          :: Float64
     # Functions
-    dvdt        :: Function
-    Bfield      :: Union{Array{Function},Function}
     B           :: Array{Float64}
     lvol        :: Vector{Int}
+
     # Constructor to build easier
-    function particle(x,v,mode,Δt,dvdt,Bfield,lvol;gc_initial=true)
-        typeof(Bfield) <: Function ? B = Bfield : B = Bfield[lvol]
+    function particle(x::Array{Float64},v::Array{Float64},mode,Δt,Bfield,lvol;gc_initial=true)
+        # Check the magnetic field type
+        if typeof(Bfield) <: Function
+            B = Bfield
+        elseif typeof(Bfield) <: Vector{Function}
+            B = Bfield[lvol]
+        end
+
         if gc_initial
             # Convert to FO position
+            # p.x[:] = p.x[:] - guiding_center(p.x[:],p.v[:],p.Bfield)
+
             x = x - guiding_center(x,v,B)
         end
-        new(x,v,mode,[0.],Δt,dvdt,Bfield,B(x),[lvol])
+        # Create the particle object
+        new(x,v,mode,[0.],Δt,B(x),[lvol])
     end
 end
+
 
 mutable struct exact_particle
     x           :: Array{Float64}
@@ -42,16 +66,16 @@ end
 
 mutable struct sim
     # Vector that holds particle
-    sp  :: Vector{particle}
+    npart   :: Int64 
+    sp      :: Vector{particle}
 
-    function sim(nparts::Int,x₀::Vector{Vector{Float64}},v₀::Vector{Vector{Float64}},mode::Bool,Δt::Vector{Float64},dvdt,Bfield,lvol)
-        parts = Array{particle}(nparts)
-
-        if typeof(x₀) == Array{Float64}
+    function sim(nparts::Int,x₀::Array{Float64},v₀::Array{Float64},mode::Bool,Δt::Vector{Float64},Bfield,lvol)
+        
+        if typeof(x₀) == Vector{Float64}
             # Ensure position can be read
             x₀ = [x₀ for i in 1:nparts]
         end
-        if typeof(v₀) == Array{Float64}
+        if typeof(v₀) == Vector{Float64}
             # Ensure velocity can be read
             v₀ = [v₀ for i in 1:nparts]
         end
@@ -60,21 +84,23 @@ mutable struct sim
             lvol = [lvol for i in 1:nparts]
         end
 
-        if length(x) == nparts
-            for i = 1:nparts
-                # Check if Bfield is a function or an array
-                parts[i] = particle(x₀[i],v₀[i],mode,Δt[i],dvdt,Bfield,lvol[i])
-            end
-        else
+        parts = Array{particle}(undef,nparts)
 
+        println(v₀)
+
+        for i = 1:nparts
+            # Check if Bfield is a function or an array
+            parts[i] = particle(x₀[i],v₀[i],mode,Δt[i],Bfield,lvol[i])
         end
-        new(parts)
+
+        new(nparts,parts)
     end
 
 end
 
-mutable struct analytic
-    sp  :: Array{exact_particle}
+mutable struct analytic_sim
+    nparts  :: Int64
+    sp      :: Array{exact_particle}
 end
 
 
@@ -90,13 +116,13 @@ end
     Particle based fns
 =====#
 
-function guiding_center(x::Array{Float64},v::Array{Float64},Bfield::Function)
+function guiding_center(x::Vector{Float64},v::Vector{Float64},Bfield::Function)
     B = Bfield(x)
     gc = m/q * cross(v,B)/norm(B,2)^2
     return gc
 end
 
-function ODEgc(xv::Array{Float64},t::Float64,B::Array)
+function MagneticForce_GC(xv::Array{Float64},t::Float64,B::Array)
     # x = xv[1:3]
     v = xv[4:6]
     v = dot(v,B)/norm(B,2)^2 * B

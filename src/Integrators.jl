@@ -1,50 +1,93 @@
 # Integrators
 
+#=
+    ORBIT SOLVER
+=#
+function solve_orbit!(p::particle,ODE,t_f;method="RK4")
+
+    # Used as an iterator this will update the particle object provided
+
+    # Set the integrator
+    if method=="RK4"
+        integrator = RK4
+    end
+    # Check the magnetic field type
+    Btype = typeof(ODE.MagneticField)
+
+    crossing = false
+    
+    # Main time loop
+    while p.t[end] < t_f
+        xv = vcat(p.x[:,end], p.v[:,end])
+        tᵢ = [p.t[end], p.t[end]+p.Δt]
+
+        if Btype <: Vector{Function}
+            B = ODE.MagneticField[p.lvol[end]]
+        else
+            B = ODE.MagneticField
+        end
+        
+        fₓ(x,t) = ODE.EOM(x,t,B(p.x[end,:]))
+        
+        if !crossing
+            x_tmp, t_tmp, Δt_tmp, crossing = integrator(fₓ,xv,tᵢ,eventfn=ODE.event)
+        else
+            x_tmp, t_tmp, Δt_tmp, crossing = integrator(fₓ,xv,tᵢ)
+        end
+        # Storage
+        p.x = hcat(p.x,x_tmp[1:3,2])
+        p.v = hcat(p.v,x_tmp[4:6,2])
+        p.t = vcat(p.t,t_tmp[2])
+        p.B = hcat(p.B,B(x_tmp[1:3,2]))
+        # Updates the volume based on the direction of crossing
+        if !crossing
+            append!(p.lvol,p.lvol[end])
+        else
+            append!(p.lvol,p.lvol[end]-sign(x_tmp[6,2]))
+        end
+        
+    end
+
+end
 
 
 
-function integrate!(p::Union{particle,Array{particle}},t_f;eventfn=nothing,method="RK4")
+function run_sim!(f::sim,ODE,t_f;method="RK4")
+    # INTERFACE FOR solving simulations
+    for i = 1:f.npart
+        solve_orbit!(f.sp[i],ODE,t_f,method=method)
+    end
+    # return f
+end
+
+
+function integrate!(ODE::Function,xv::Vector{Float64},t;eventfn=nothing,method="RK4")
 
     if method=="RK4"
         integrator = RK4
     end
 
-    if !p.gc
-        p.x[:] = p.x[:] - guiding_center(p.x[:],p.v[:],p.Bfield)
+    # Turn event location on/off
+    typeof(eventfn) <: Nothing ? dchk = false : dchk = true
+
+    while i < m
+        x, t, h, crossing = integrator(ODE,xv,t)
+
+        if dchk
+            event = eventfn(x[:,i:i+1])
+            if event < 0.
+                t, h, xn = event_loc(fₓ,x[:,i:i+1],k,h,t)
+                t[i+1] = t[i] + h
+                x[:,i+1] = xn
+                crossing = true
+            elseif event == 0
+                crossing = true
+            end
+        end
+
     end
 
-    Btype = typeof(p.Bfield)
-
-    while p.t[end] < t_f
-        xv = vcat(p.x[:,end], p.v[:,end])
-        tᵢ = [p.t[end], p.t[end]+p.Δt]
-
-        if Btype <: Array
-            B = p.Bfield[p.lvol[end]]
-        else
-            B = p.Bfield
-        end
-        
-        fₓ(x,t) = p.dvdt(x,t,B(p.x[end,:]))
-        
-        x_tmp, t_tmp, Δt_tmp, crossing = integrator(fₓ,xv,tᵢ,eventfn=eventfn)
-        
-        # Storage
-        p.x = hcat(p.x,x_tmp[1:3,2])
-        p.v = hcat(p.v,x_tmp[4:6,2])
-        p.t = vcat(p.t,t_tmp[2])
-        p.B = hcat(p.B,p.Bfield(x_tmp[1:3,2]))
-        # Updates the volume based on the direction of crossing
-
-        if !crossing
-            append!(p.lvol,p.lvol[end])
-        else
-            append!(p.lvol,p.lvol[end]+sign(v_tmp[3,2]))
-        end
-        
-    end
-
-    return p
+    return x, t, Δt, crossing
 end
 
 
@@ -112,13 +155,11 @@ function event_loc(dvdt::Function,x::Array{Float64},k::Array{Float64},h::Float64
     # Initial guess based on linear interpolation
     τₙ = (bound - x[3,1])/(x[3,2] - x[3,1])
     
-    xtilde(τ) = boostrapped(τ,h,x[3,:],k[1,3],f₁,fₘ) - bound
-    xtilde_dt(τ) = dt_bootstrapped(τ,h,x[3,:],k[1,1],f₁,fₘ) - bound
-
-    f_root!(xtilde,xtilde_dt,τₙ)
+    xtilde(τ) = boostrapped(τ,h,x,k[:,1],f₁,fₘ)[3] #- bound
+    xtilde_dt(τ) = dt_bootstrapped(τ,h,x,k[:,1],f₁,fₘ)[3] #- bound
     
+    τₙ = f_root!(xtilde,xtilde_dt,τₙ)
     xₙ = boostrapped(τₙ,h,x,k[:,1],f₁,fₘ)
-    
     h = τₙ*h
     t[2] = t[1] + h
     
@@ -177,40 +218,38 @@ end
 #=
 =#
 
-function f_root!(f,df,x₀;maxits=20,atol=1.e-10)
-    x₀,dx,converged = Newtons(f,df,x₀)
+function f_root!(f,df,x₀;maxits=20,atol=1.e-14)
+    x₀,converged = Newtons!(f,df,x₀,maxits=maxits,atol=atol)
     if !converged
         # If Newtons oscillates revert to bisection
-        x₀ = bisection(f,a=x₀-2*dx,b=x₀+2*dx)
+        x₀,converged = bisection(f,a=x₀-2*dx,b=x₀+2*dx)
     end
-    if x₀ ∉ [0,1]
+    if !(0. < x₀ < 1.)
         # If Newtons fails call bisection
-        x₀ = bisection(f)
+        x₀,converged = bisection(f)
     end
     return x₀
 end
 
-function Newtons(f,df,x₀;maxits=20,atol=1.e-10)
-    xₒ = x₀
+function Newtons!(f,df,xₙ;maxits=20,atol=1.e-14)
+    # xₙ = x₀
     # if df == Nothing
-    converged = true
+    converged = false
     for n = 1:maxits
         xₒ = xₙ
         xₙ = xₒ - f(xₒ)/df(xₒ)
-        dx = abs(xₒ - xₙ)
-        if (dx < atol)
+        if (abs(xₒ - xₙ) < atol)
+            converged = true
             break
         end
     end
-    if (n == maxits) & (dx > atol)
-        converged = false
-    end
-    return xₙ, dx, converged
+    return xₙ, converged
 end
 
-function bisection(f::Function;maxits=30,atol=1.e-10,a=0.,b=1.)
+function bisection(f::Function;maxits=50,atol=1.e-10,a=0.,b=1.)
     
-    converged = true
+    converged = false
+    c = 0.
     if sign(f(a))==sign(f(b))
         return Nothing, false
     end
@@ -223,11 +262,9 @@ function bisection(f::Function;maxits=30,atol=1.e-10,a=0.,b=1.)
             b = c
         end
         if (b-a) < atol
+            converged = true
             break
         end
-    end
-    if i == maxits
-        converged = false
     end
     return c, converged
 end

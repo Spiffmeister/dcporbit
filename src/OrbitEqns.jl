@@ -2,7 +2,13 @@
     Full orbit and gyrocenter equations
 =#
 
-function exactsolve(x₀::Vector{Float64},v₀::Vector{Float64},t::Vector{Float64},Bfield::Union{Function,Array{Function}};crossing=true,eventfn=Nothing)
+function analytic_solve(sim::analytic_sim,Bfield)
+    for i = 1:sim.nparts
+        analytic_solve(sim.sp[i].x,sim.sp[i].v,sim.sp[i].t,Bfield)
+    end
+end
+
+function analytic_solve(x₀::Vector{Float64},v₀::Vector{Float64},t::Vector{Float64},Bfield::Union{Function,Array{Function}};crossing=true,eventfn=Nothing)
     # Works for static fields
     if typeof(Bfield) <: Function
         B = Bfield

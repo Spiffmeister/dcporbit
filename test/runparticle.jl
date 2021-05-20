@@ -8,18 +8,17 @@ guidingcentre = false
 x₀ = [0.,0.,0.]
 v₀ = [1.,0.,0.]
 # Set simulation parameters
-t₀ = 0.
 t_f = 1.
-Δt = 1.e-1
-tol = 1.e-14
+Δt = 1.e-3
 # Set the magnetic field
 Bfield(x) = [0.,0.,1.]
 # Initialise the particle
-p = particle(x₀,v₀,guidingcentre,Δt,MagneticForce,Bfield,1)
+p = particle(x₀,v₀,guidingcentre,Δt,Bfield,1)
+ODE = forces(Bfield)
 # Run the simulation
-integrate!(p,t_f)
+solve_orbit!(p,ODE,t_f)
 # Compute exact solution
-pe = exactsolve(x₀,v₀,p.t,Bfield,crossing=false)
+pe = analytic_solve(x₀,v₀,p.t,Bfield,crossing=false)
 
 
 # Plot solutions

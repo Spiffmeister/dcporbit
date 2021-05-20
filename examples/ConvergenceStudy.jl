@@ -30,16 +30,14 @@ end
 
 
 
-
 f = sim(nparts,gc₀,v₀,guidingcenter,Δt,dvdt,Bfield,1)
 
-
-
-particle(x₀,v₀,guidingcentre,Δt,MagneticForce,Bfield,1)
-
-
-# integrate(p,t_f,eventfn=eventfn)
+run_sim!(f,dvdt,t_f)
 
 
 
-# f = [particle(x₀,v₀,guidingcenter,[2^-i for i in 1:nparts]),]
+
+
+# pe = analytic_solve(x₀,v₀,p.t,Bfield,crossing=false)
+
+

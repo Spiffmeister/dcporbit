@@ -23,6 +23,7 @@ function plt_gyroradius(v::Array,B::Function,t::Array)
     plt = plot(t,gr,guidefontsize=16,framestyle=:classic)
     xlabel!("x")
     xlabel!("y")
+    return plt
 end
 
 
@@ -30,20 +31,6 @@ end
 #=
     CONVERGENCE TESTS
 =#
-
-# function plt_error(p::Dict)
-#     plt = plot(legend=true,guidefontsize=16,framestyle=:classic)
-#     plot!()
-#     xlabel!(L"t (s)")
-# end
-
-
-# function plt_energy()
-# end
-
-
-
-
 
 
 function plt_error(p::Dict,err;ylab="xerr",type="t",tdc=[],savfig=false,n=[0],format="png",modname="")
