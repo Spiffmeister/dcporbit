@@ -33,6 +33,8 @@ mutable struct particle
     # Functions
     B           :: Array{Float64}
     lvol        :: Vector{Int}
+    gc_init     :: Bool
+    x₀          :: Vector{Float64}
 
     # Constructor to build easier
     function particle(x::Array{Float64},v::Array{Float64},mode,Δt,Bfield,lvol;gc_initial=true)
@@ -43,30 +45,20 @@ mutable struct particle
             B = Bfield[lvol]
         end
 
+        x₀ = x
         if gc_initial
             # Convert to FO position
-            # p.x[:] = p.x[:] - guiding_center(p.x[:],p.v[:],p.Bfield)
-
             x = x - guiding_center(x,v,B)
         end
         # Create the particle object
-        new(x,v,mode,[0.],Δt,B(x),[lvol])
+        new(x,v,mode,[0.],Δt,B(x),[lvol],gc_initial,x₀)
     end
 end
 
 
-mutable struct exact_particle
-    x           :: Array{Float64}
-    v           :: Array{Float64}
-    x_boundary  :: Array{Float64}
-    v_boundary  :: Array{Float64}
-    t           :: Vector{Float64}
-    t_boundary  :: Vector{Float64}
-end
-
 mutable struct sim
     # Vector that holds particle
-    npart   :: Int64 
+    nparts  :: Int64 
     sp      :: Vector{particle}
 
     function sim(nparts::Int,x₀::Array{Float64},v₀::Array{Float64},mode::Bool,Δt::Vector{Float64},Bfield,lvol)
@@ -85,22 +77,34 @@ mutable struct sim
         end
 
         parts = Array{particle}(undef,nparts)
-
-        println(v₀)
-
         for i = 1:nparts
-            # Check if Bfield is a function or an array
             parts[i] = particle(x₀[i],v₀[i],mode,Δt[i],Bfield,lvol[i])
         end
-
         new(nparts,parts)
     end
-
 end
 
+
+mutable struct exact_particle
+    # Structure for hold the exact solutions to particles
+    x           :: Array{Float64}
+    v           :: Array{Float64}
+    x_boundary  :: Array{Float64}
+    v_boundary  :: Array{Float64}
+    t           :: Vector{Float64}
+    t_boundary  :: Vector{Float64}
+end
+
+
 mutable struct analytic_sim
+    # Container for multiple analytic particles
     nparts  :: Int64
     sp      :: Array{exact_particle}
+
+    function analytic_sim(nparts::Int64)
+        parts = Array{exact_particle}(undef,nparts)
+        new(nparts,parts)
+    end
 end
 
 

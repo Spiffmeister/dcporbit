@@ -24,5 +24,9 @@ f = sim(nparts,gc₀,v₀,guidingcenter,Δt,Bfield,1)
 # Run all particles
 run_sim!(f,dvdt,t_f)
 
+g = analytic_solve(f,Bfield,crossing=false)
+
 # Plot an orbit
 orbit.plt_orbit(f.sp[1])
+
+orbit.plt_orbit(g.sp[1])

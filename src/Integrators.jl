@@ -20,7 +20,6 @@ function solve_orbit!(p::particle,ODE,t_f;method="RK4")
     while p.t[end] < t_f
         xv = vcat(p.x[:,end], p.v[:,end])
         tᵢ = [p.t[end], p.t[end]+p.Δt]
-
         if Btype <: Vector{Function}
             B = ODE.MagneticField[p.lvol[end]]
         else
@@ -43,7 +42,7 @@ function solve_orbit!(p::particle,ODE,t_f;method="RK4")
         if !crossing
             append!(p.lvol,p.lvol[end])
         else
-            append!(p.lvol,p.lvol[end]-sign(x_tmp[6,2]))
+            append!(p.lvol,p.lvol[end]+sign(x_tmp[6,2]))
         end
         
     end
@@ -54,7 +53,7 @@ end
 
 function run_sim!(f::sim,ODE,t_f;method="RK4")
     # INTERFACE FOR solving simulations
-    for i = 1:f.npart
+    for i = 1:f.nparts
         solve_orbit!(f.sp[i],ODE,t_f,method=method)
     end
     # return f
@@ -219,19 +218,19 @@ end
 =#
 
 function f_root!(f,df,x₀;maxits=20,atol=1.e-14)
-    x₀,converged = Newtons!(f,df,x₀,maxits=maxits,atol=atol)
+    x₀,converged = newtons!(f,df,x₀,maxits=maxits,atol=atol)
     if !converged
-        # If Newtons oscillates revert to bisection
+        # If newtons oscillates revert to bisection
         x₀,converged = bisection(f,a=x₀-2*dx,b=x₀+2*dx)
     end
     if !(0. < x₀ < 1.)
-        # If Newtons fails call bisection
+        # If newtons fails call bisection
         x₀,converged = bisection(f)
     end
     return x₀
 end
 
-function Newtons!(f,df,xₙ;maxits=20,atol=1.e-14)
+function newtons!(f,df,xₙ;maxits=20,atol=1.e-14)
     # xₙ = x₀
     # if df == Nothing
     converged = false

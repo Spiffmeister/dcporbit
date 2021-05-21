@@ -36,7 +36,7 @@ run_sim!(f,dvdt,t_f)
 
 
 
-
+pe = analytic_solve(x₀,v₀,p.t,Bfield,crossing=false)
 
 # pe = analytic_solve(x₀,v₀,p.t,Bfield,crossing=false)
 

@@ -1,7 +1,7 @@
 module orbit
 
     using LinearAlgebra
-    # using Roots
+    using Roots
     using Plots
     using LaTeXStrings
     using JLD2
