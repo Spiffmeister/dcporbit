@@ -8,29 +8,33 @@
 ===#
 function analytic_solve(p::particle,Bfield;crossing=true,eventfn=nothing)
     # Method for taking in a particle and returning the analytic solve
-    x₀ = p.x[:,1]
+    x₀ = p.gc[:,1]
     v₀ = p.v[:,1]
     t = p.t
     lvol = p.lvol[1]
     crossing != diff(p.lvol .== 0)
     # Compute the analytic solution based on the simulation
-    pe = analytic_solve(p.x₀,v₀,t,Bfield,crossing=crossing,eventfn=eventfn,lvol=lvol)
+    pe = analytic_solve(x₀,v₀,t,Bfield,crossing=crossing,eventfn=eventfn,lvol=lvol)
     return pe
 end
 
-function analytic_solve(simulation::sim,Bfield;crossing=true,eventfn=nothing,gc_init=true)
+function analytic_solve(simulation::sim,Bfield;crossing=true,eventfn=nothing::Union{Nothing,Function})
     # Method for taking in a simulation
     asym = analytic_sim(simulation.nparts)
     # Loop over simulations and compute analytic simulations
     for i = 1:simulation.nparts
-        x₀ = simulation.sp[i].x₀
+        x₀ = simulation.sp[i].gc[:,1]
         v₀ = simulation.sp[i].v[:,1]
         t = simulation.sp[i].t
         lvol = simulation.sp[i].lvol[1]
         # Check if there are crossings
-        crossing != diff(simulation.sp[i].lvol .== 0)
+        crossing = any(diff(simulation.sp[i].lvol) .!= 0)
+        
+        if (crossing) & (typeof(eventfn) <: Nothing)
+            error("Cannot have a crossing case with no event function")
+        end
 
-        asym.sp[i] = analytic_solve(x₀,v₀,t,Bfield,crossing=crossing,eventfn=eventfn,lvol=1)
+        asym.sp[i] = analytic_solve(x₀,v₀,t,Bfield,crossing=crossing,eventfn=eventfn,lvol=lvol)
     end
     return asym
 end
@@ -50,6 +54,9 @@ function analytic_solve(x₀::Vector{Float64},v₀::Vector{Float64},t::Vector{Fl
     x = x_b = x₀ - guiding_center(x₀,v₀,Bf)
     v = v_b = v₀
 
+    x̄ = Array{Float64,2}(undef,3,0)
+    b₁ = Array{Float64,2}(undef,3,0)
+
     # Crossing time
     τ_b = Vector{Float64}(undef,0)
 
@@ -60,15 +67,14 @@ function analytic_solve(x₀::Vector{Float64},v₀::Vector{Float64},t::Vector{Fl
         x = exact_x(v₀,x₀,b,t,ω)
         v = exact_v(v₀,b,t,ω)
     end
-    
+    k = 0
     while crossing
         # If there are crossings solve per region
         B = Bfield[lvol](x_b[:,end])
         b = magcoords(v₀,B)
+        b₁ = hcat(b₁,b[1]) #Store the main vector so we can compute average orbits at the end
         ω = abs(q)/m * norm(B)
         τ = bound_time(ω,b) #Compute crossing time
-        println("yes")
-        println(lvol)
         if τ != 0 & (τ < t[end])
             # If crossing time found store it
             append!(τ_b,τ)
@@ -84,8 +90,8 @@ function analytic_solve(x₀::Vector{Float64},v₀::Vector{Float64},t::Vector{Fl
             x_b = hcat(x_b,exact_x(v₀,x₀,b,τ,ω))
             v_b = hcat(v_b,exact_v(v₀,b,τ,ω))
             # Store positions for returning
-            x = hcat(x,xᵢ,x_b[:,end])
-            v = hcat(x,vᵢ,v_b[:,end])
+            x = hcat(x,xᵢ)
+            v = hcat(x,vᵢ)
             # Update the field to use
             lvol = lvol + Int(sign(v_b[3,end]))
         else
@@ -109,8 +115,8 @@ function analytic_solve(x₀::Vector{Float64},v₀::Vector{Float64},t::Vector{Fl
                     τ = find_zero(ex,(tᵢ[i-1],tᵢ[i+1]),Bisection(),atol=1.e-15)
                     x_b = hcat(x_b,exact_x(v₀,x₀,b,τ,ω))
                     v_b = hcat(v_b,exact_v(v₀,b,τ,ω))
-                    x = hcat(x,x_b[:,end])
-                    v = hcat(v,v_b[:,end])
+                    x = hcat(x)
+                    v = hcat(v)
                     append!(τ_b,τ)
                     lvol = lvol + Int(sign(v_b[3,end]))
                     t_f = τ #For exit condition
@@ -119,18 +125,23 @@ function analytic_solve(x₀::Vector{Float64},v₀::Vector{Float64},t::Vector{Fl
                 i += 1
             end
         end
+        k += 1
+        if mod(k,2) == 0
+            x_bp = x_bar(v_b[:,k-1],b₁[:,k-1],τ_b[k-1])
+            x_bm = x_bar(v_b[:,k],b₁[:,k],τ_b[k])
+            x̄ = hcat(x̄,average_orbit(x_bp,x_bm,τ_b[k-1],τ_b[k]))
+        end
         # Set all params for next phase
         v₀ = v_b[:,end]
-        println(x_b[:,end])
-        println(v₀)
         x₀ = gc(x_b[:,end],v₀,Bfield[lvol](x_b[:,end]))
         if t_f >= t[end]
+            τ_b[end] > t[end] ? τ_b=τ_b[1:end-1] : τ_b
             # If finished
             break
         end
 
     end
-    return exact_particle(x,v,x_b,v_b,t,τ_b)
+    return exact_particle(x,v,x_b,v_b,t,τ_b,x̄)
 end
 
 #===
@@ -154,7 +165,7 @@ end
 ### Functions for computing the average drift ###
 function x_bar(v₀,b,τ)
     # ONLY WORKS SINCE ω=1
-    x_bar = dot(v₀,b[1])*b[1]*τ + 2*dot(v₀,[0,0,1])*cross([0,0,1],b[1])
+    x_bar = dot(v₀,b)*b*τ + 2*dot(v₀,[0,0,1])*cross([0,0,1],b)
     return x_bar
 end
 

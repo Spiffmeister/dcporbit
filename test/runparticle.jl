@@ -23,8 +23,9 @@ pe1 = analytic_solve(x₀,v₀,p.t,Bfield,crossing=false)
 
 pe2 = analytic_solve(p,Bfield,crossing=false)
 
-
-
 # Plot solutions
 p1 = orbit.plt_orbit(p)
 p2 = orbit.plt_orbit(pe1)
+
+
+

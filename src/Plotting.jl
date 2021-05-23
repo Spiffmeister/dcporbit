@@ -32,6 +32,12 @@ end
     CONVERGENCE TESTS
 =#
 
+function plt_error(f::sim,g::analytic_sim)
+    n = f.nparts
+
+end
+
+
 
 function plt_error(p::Dict,err;ylab="xerr",type="t",tdc=[],savfig=false,n=[0],format="png",modname="")
     if n[1] == 0
@@ -216,3 +222,5 @@ function plt_momcons(p,xy;n=[],tdc=[],lab="p_x",savfig=false,format="png")
     end
     return plt
 end
+
+

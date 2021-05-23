@@ -15,6 +15,13 @@ function solve_orbit!(p::particle,ODE,t_f;method="RK4")
     Btype = typeof(ODE.MagneticField)
 
     crossing = false
+
+    # if !p.gc_or_fo
+    #     EOM(x,t,B) = ODE.EOM(x,t,B)
+    # else
+    #     EOM(x,t,B) = ODE.EOM_GC(x,t,B)
+    # end
+
     
     # Main time loop
     while p.t[end] < t_f
@@ -29,20 +36,21 @@ function solve_orbit!(p::particle,ODE,t_f;method="RK4")
         fₓ(x,t) = ODE.EOM(x,t,B(p.x[end,:]))
         
         if !crossing
-            x_tmp, t_tmp, Δt_tmp, crossing = integrator(fₓ,xv,tᵢ,eventfn=ODE.event)
+            xv, t, Δt_tmp, crossing = integrator(fₓ,xv,tᵢ,eventfn=ODE.event)
         else
-            x_tmp, t_tmp, Δt_tmp, crossing = integrator(fₓ,xv,tᵢ)
+            xv, t, Δt_tmp, crossing = integrator(fₓ,xv,tᵢ)
         end
         # Storage
-        p.x = hcat(p.x,x_tmp[1:3,2])
-        p.v = hcat(p.v,x_tmp[4:6,2])
-        p.t = vcat(p.t,t_tmp[2])
-        p.B = hcat(p.B,B(x_tmp[1:3,2]))
+        p.x = hcat(p.x,xv[1:3,2])
+        p.v = hcat(p.v,xv[4:6,2])
+        p.t = vcat(p.t,t[2])
+        p.B = hcat(p.B,B(xv[1:3,2]))
+        p.gc = hcat(p.gc,xv[1:3,2]+guiding_center(xv[1:3,2],xv[4:6,2],B))
         # Updates the volume based on the direction of crossing
         if !crossing
             append!(p.lvol,p.lvol[end])
         else
-            append!(p.lvol,p.lvol[end]+sign(x_tmp[6,2]))
+            append!(p.lvol,p.lvol[end]+sign(xv[6,2]))
         end
         
     end

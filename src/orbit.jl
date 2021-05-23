@@ -14,6 +14,6 @@ module orbit
 
     export sim,particle,exact_particle,forces
     export analytic_solve,integrate!,solve_orbit!,run_sim!
-    export dvdt,MagneticForce
+    export MagneticForce,MagneticForce_GC
 
 end

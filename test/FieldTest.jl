@@ -10,6 +10,7 @@ nparts = 8
 
 guidingcenter = false
 gc₀ = [0., 0., 0.]
+x₀ = [0., 0., -0.9]
 v₀ = [1.,0.,0.]
 Δt = 1.e-3
 
@@ -49,11 +50,21 @@ println(p.x[3,mins])
 
 
 
+
+g = particle(x₀,v₀,guidingcenter,Δt,Bfield,1,gc_initial=false)
+solve_orbit!(g,ODE,t_f)
+ge = analytic_solve(p,Bfield,crossing=true,eventfn=event)
+
+
+
+
 using Plots
 pyplot()
 
 plot3d(p.x[1,:],p.x[2,:],p.x[3,:])
 plot3d!(pe.x[1,:],pe.x[2,:],pe.x[3,:])
+
+plot3d(g.x[1,:],g.x[2,:],g.x[3,:])
 
 
 
