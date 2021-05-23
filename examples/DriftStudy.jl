@@ -15,10 +15,10 @@ Guiding center and full orbits moving through Z=0 plane
 =#
 guidingcenter = false
 gc₀ = [0., 0., 0.]
-x₀ = [[0.,0.,x] for x in -0.9:0.05:-0.1]
+x₀ = [[0.,0.,x] for x in -0.9:0.1:-0.1]
 v₀ = [1.,0.,0.]
 Δt = 1.e-3
-t_f = 10.
+t_f = 40.
 nparts = length(x₀)
 
 α = π/6
@@ -56,6 +56,7 @@ solve_orbit!(gcsim₂,ODE_GC₂,t_f)
 
 
 using Plots
+using Printf
 pyplot()
 
 function plt_gcprojection(f,gc₁,gc₂)
@@ -88,16 +89,17 @@ end
 
 function plt_avprojection(fe,gc₁,gc₂)
     # AVERAGE ORBIT
-    cp = palette(:tab20)
+    # cp = palette(:tab20)
 
-    plt = plot(xlabel="x",ylabel="y",legend=true)
+    plt = plot(xlabel="x",ylabel="y",legend=true,dpi=600,framestyle=:classic)
     for k = 1:f.nparts
         t = range(fe.sp[k].t_boundary[2],stop=fe.sp[k].t[end],length=100)
         ave = zeros(3,length(t))
         for i = 1:length(t)
             ave[:,i] = fe.sp[k].avetraj[:,2] * t[i]
         end
-        plot!(plt,ave[1,:],ave[2,:],label=string("gc₀=",f.sp[k].gc[1,3]))
+        # plot!(plt,ave[1,:],ave[2,:],label=string("gc₀=",f.sp[k].gc[3,1]))
+        plot!(plt,ave[1,:],ave[2,:],label="gc_z=$(@sprintf("%.1e",f.sp[k].gc[3,1]))")
     end
 
     plot!(plt,gc₁.x[1,:],gc₁.x[2,:],linestyle=:dash,label="z<0 field")
@@ -106,10 +108,21 @@ function plt_avprojection(fe,gc₁,gc₂)
     return plt
 end
 
+
+function plt_td(f)
+    plt = plot3d(f.sp[1].x[1,:],f.sp[1].x[2,:],f.sp[1].x[3,:])
+    for i = 2:fe.nparts
+        plt = plot3d!(f.sp[i].x[1,:],f.sp[i].x[2,:],f.sp[i].x[3,:])
+    end
+    return plt
+end
+
+
+
 # plt_gcprojection(f,gcsim₁,gcsim₂)
 pav = plt_avprojection(fe,gcsim₁,gcsim₂)
 
-savefig(pav,"Fgiures//movingPart.pdf")
+savefig(pav,"Figures//movingPart.pdf")
 
 
 

@@ -39,7 +39,12 @@ g = analytic_solve(f,Bfield,crossing=true,eventfn=event)
 
 
 
-using Plots
-pyplot()
-plot3d(f.sp[4].x[1,:],f.sp[4].x[2,:],f.sp[4].x[3,:])
-plot3d!(g.sp[4].x[1,:],g.sp[4].x[2,:],g.sp[4].x[3,:])
+function plt_error(f,g)
+    n = 1:f.nparts
+    plt = plot(dpi=600,legend=true,guidefontsize=16,framestyle=:classic)
+    for i = n
+        Δx = f.sp[i].x .- g.sp[i].x
+        
+    end
+end
+
