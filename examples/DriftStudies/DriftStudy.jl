@@ -2,54 +2,54 @@
     Performing convergence study
 =#
 
-# Is this a guiding center intialisation?
-
-
-tol = 1.e-14
-
-
-# Simulation parameters
 
 #=
 Guiding center and full orbits moving through Z=0 plane
 =#
 guidingcenter = false
 gc₀ = [0., 0., 0.]
-x₀ = [[0.,0.,x] for x in -0.9:0.1:-0.1]
 v₀ = [1.,0.,0.]
 Δt = 1.e-3
 t_f = 40.
-nparts = length(x₀)
-
-α = π/6
-B₁(x) = [cos(α),sin(α),0.]
-B₂(x) = [cos(α),-sin(α),0.]
-
-Bfield = [B₁,B₂]
 
 function event(xv)
     chk = sign(xv[3,1])*sign(xv[3,2])
     return chk
 end
 
-ODE = forces(Bfield,event=event)
+α = π/6
 
 #=
-    Run simulation and solve analytically
+Run simulation and solve analytically
 =#
+B₁(x) = [cos(α),sin(α),0.]
+B₂(x) = [cos(α),-sin(α),0.]
+Bfield = [B₁,B₂]
+ODE = forces(Bfield,event=event)
+
+# Below the z=0 plane
+x₀ = [[0.,0.,x] for x in -0.9:0.1:-0.1]
+nparts = length(x₀)
+
 f = sim(nparts,x₀,v₀,guidingcenter,Δt,Bfield,1,gc_initial=false)
 run_sim!(f,ODE,t_f)
 fe = analytic_solve(f,Bfield,crossing=true,eventfn=event)
+
+# Above the z=0 plane
+x₀ = [[0.,0.,x] for x in 0.1:0.1:0.9]
+
+g = sim(nparts,x₀,v₀,guidingcenter,Δt,Bfield,2,gc_initial=false)
+run_sim!(g,ODE,t_f)
+ge = analytic_solve(g,Bfield,crossing=true,eventfn=event)
+
 
 #=
     Compute the GC positions to add to plot
 =#
 ODE_GC₁ = forces(B₁,force=MagneticForce_GC)
 gcsim₁ = particle(gc₀,v₀,true,Δt,Bfield[1],1)
-
 ODE_GC₂ = forces(B₂,force=MagneticForce_GC)
 gcsim₂ = particle(gc₀,v₀,true,Δt,Bfield[2],1)
-
 solve_orbit!(gcsim₁,ODE_GC₁,t_f)
 solve_orbit!(gcsim₂,ODE_GC₂,t_f)
 
@@ -120,9 +120,13 @@ end
 
 
 # plt_gcprojection(f,gcsim₁,gcsim₂)
-pav = plt_avprojection(fe,gcsim₁,gcsim₂)
+fav = plt_avprojection(fe,gcsim₁,gcsim₂)
 
-savefig(pav,"Figures//movingPart.pdf")
+gav = plt_avprojection(ge,gcsim₁,gcsim₂)
+
+
+savefig(fav,"Figures//movingPart_f.pdf")
+savefig(gav,"Figures//movingPart_g.pdf")
 
 
 
