@@ -55,25 +55,14 @@ using Plots
 using Printf
 pyplot()
 
+
 function plt_gcprojection(f,gc₁,gc₂)
     # GC PROJECTION
     cp = palette(:tab20)
 
     plt = plot(xlabel="x",ylabel="y",legend=true)
     for k = 1:f.nparts
-        gcp = zeros(2,length(f.sp[k].lvol))
-        gcp .= NaN
-        gcm = zeros(2,length(f.sp[k].lvol))
-        gcm .= NaN
-
-        z_p = findall(x->x == 1,f.sp[k].lvol)
-        z_m = findall(x->x == 2,f.sp[k].lvol)
-
-        gcp[:,z_p] = f.sp[k].gc[1:2,z_p]
-        gcm[:,z_m] = f.sp[k].gc[1:2,z_m]
-
-        plot!(plt,gcp[1,:],gcp[2,:],color=cp[k],label=string("Δt=",f.sp[k].Δt[1],"z<0"))
-        plot!(plt,gcm[1,:],gcm[2,:],color=cp[k],label=string("Δt=",f.sp[k].Δt[1],"z>0"))
+        plot!(plt,f.sp[k].gc[1,:],f.sp[k].gc[2,:],color=cp[k],label="gc_z=$(@sprintf("%.1e",f.sp[k].gc[3,1]))")
     end
 
     plot!(plt,gc₁.x[1,:],gc₁.x[2,:],linestyle=:dash)
@@ -81,6 +70,7 @@ function plt_gcprojection(f,gc₁,gc₂)
 
     return plt
 end
+
 
 
 function plt_avprojection(fe,gc₁,gc₂)
@@ -116,12 +106,15 @@ end
 
 
 pav = plt_avprojection(fe,gcsim₁,gcsim₂)
-savefig(pav,"Figures//movingPart.pdf")
+savefig(pav,"Figures//movingPart_dB.pdf")
+
+gca = plt_gcprojection(f,gcsim₁,gcsim₂)
+savefig(gca,"Figures//movingPart_db_gc.pdf")
 
 
-plt = plot(f.sp[1].gc[1,:],f.sp[1].gc[2,:])
-plot!(plt,f.sp[4].gc[1,:],f.sp[4].gc[2,:])
-plot!(plt,f.sp[f.nparts].gc[1,:],f.sp[f.nparts].gc[2,:])
+# plt = plot(f.sp[1].gc[1,:],f.sp[1].gc[2,:])
+# plot!(plt,f.sp[4].gc[1,:],f.sp[4].gc[2,:])
+# plot!(plt,f.sp[f.nparts].gc[1,:],f.sp[f.nparts].gc[2,:])
 
 
 

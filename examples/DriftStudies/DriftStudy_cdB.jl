@@ -114,8 +114,6 @@ end
 
 
 fav = plt_avprojection(fe,gcsim₁,gcsim₂)
-gav = plt_avprojection(ge,gcsim₁,gcsim₂)
 
-savefig(fav,"Figures//movingPart_f.pdf")
-savefig(gav,"Figures//movingPart_g.pdf")
+savefig(fav,"Figures//movingPart_cdB.pdf")
 
