@@ -47,9 +47,10 @@ mutable struct particle
         end
 
         # Check the mode input
-        mode == :fo ? mode = :fullorbit : nothing
-        mode == :gc ? mode = :guidingcentre : nothing
+        mode ∈ [:fo,:fullorbit] ? mode = :fullorbit : nothing
+        mode ∈ [:gc,:guidingcentre] ? mode = :guidingcentre : nothing
         if mode ∉ [:fullorbit,:guidingcentre]
+            println(mode)
             @warn "mode not defined, switching to full orbit"
         end
 

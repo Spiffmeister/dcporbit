@@ -8,7 +8,7 @@ function solve_orbit!(p::particle,ODE,t_f;method=:RK4)
     # Used as an iterator this will update the particle object provided
 
     # Set the integrator
-    if method=="RK4"
+    if method==:RK4
         integrator = RK4
     end
     # Check the magnetic field type
