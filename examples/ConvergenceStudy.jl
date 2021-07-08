@@ -11,7 +11,7 @@ tol = 1.e-14
 # Simulation parameters
 nparts = 8
 
-guidingcenter = false
+guidingcenter = :fullorbit
 gc₀ = [0., 0., 0.]
 v₀ = [1.,0.,0.]
 Δt = [2.0^-i for i in 1:nparts]

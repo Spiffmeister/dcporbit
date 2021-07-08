@@ -9,7 +9,7 @@
 #=
 Guiding center and full orbits moving through Z=0 plane
 =#
-guidingcenter = false
+guidingcenter = :fullorbit
 gc₀ = [0., 0., 0.]
 v₀ = [1.,0.,0.]
 Δt = 1.e-3
@@ -42,9 +42,9 @@ fe = analytic_solve(f,Bfield,crossing=true,eventfn=event)
     Compute the GC positions to add to plot
 =#
 ODE_GC₁ = forces(B₁,force=MagneticForce_GC)
-gcsim₁ = particle(gc₀,v₀,true,Δt,Bfield[1],1)
+gcsim₁ = particle(gc₀,v₀,:guidingcenter,Δt,Bfield[1],1)
 ODE_GC₂ = forces(B₂,force=MagneticForce_GC)
-gcsim₂ = particle(gc₀,v₀,true,Δt,Bfield[2],1)
+gcsim₂ = particle(gc₀,v₀,:guidingcentre,Δt,Bfield[2],1)
 
 solve_orbit!(gcsim₁,ODE_GC₁,t_f)
 solve_orbit!(gcsim₂,ODE_GC₂,t_f)

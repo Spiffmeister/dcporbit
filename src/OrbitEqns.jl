@@ -50,7 +50,7 @@ function analytic_solve(x₀::Vector{Float64},v₀::Vector{Float64},t::Vector{Fl
         Bf = Bfield[lvol]
     end
 
-    ω = abs(q)/m * norm(Bf(x₀))
+    ω = [abs(q)/m * norm(Bf(x₀))]
     x = x_b = x₀ - guiding_center(x₀,v₀,Bf)
     v = v_b = v₀
 
@@ -64,8 +64,8 @@ function analytic_solve(x₀::Vector{Float64},v₀::Vector{Float64},t::Vector{Fl
         # If there are no crossings then solve the entire system at once
         B = Bf(x₀)
         b = magcoords(v₀,B)
-        x = exact_x(v₀,x₀,b,t,ω)
-        v = exact_v(v₀,b,t,ω)
+        x = exact_x(v₀,x₀,b,t,ω[1])
+        v = exact_v(v₀,b,t,ω[1])
     end
     k = 0
     while crossing
@@ -73,8 +73,9 @@ function analytic_solve(x₀::Vector{Float64},v₀::Vector{Float64},t::Vector{Fl
         B = Bfield[lvol](x_b[:,end])
         b = magcoords(v₀,B)
         b₁ = hcat(b₁,b[1]) #Store the main vector so we can compute average orbits at the end
-        ω = abs(q)/m * norm(B)
-        τ = bound_time(ω,b) #Compute crossing time
+        # ω = abs(q)/m * norm(B)
+        append!(ω,abs(q)/m * norm(B))
+        τ = bound_time(ω[end],b) #Compute crossing time
         if τ != 0 & (τ < t[end])
             # If crossing time found store it
             append!(τ_b,τ)
@@ -84,11 +85,11 @@ function analytic_solve(x₀::Vector{Float64},v₀::Vector{Float64},t::Vector{Fl
             # zero the crossing time
             tᵢ = t[tᵢ] .- sum(τ_b[1:end-1])
             # Eqns of motion
-            xᵢ = exact_x(v₀,x₀,b,tᵢ,ω)
-            vᵢ = exact_v(v₀,b,tᵢ,ω)
+            xᵢ = exact_x(v₀,x₀,b,tᵢ,ω[end])
+            vᵢ = exact_v(v₀,b,tᵢ,ω[end])
             # Positions at boundary
-            x_b = hcat(x_b,exact_x(v₀,x₀,b,τ,ω))
-            v_b = hcat(v_b,exact_v(v₀,b,τ,ω))
+            x_b = hcat(x_b,exact_x(v₀,x₀,b,τ,ω[end]))
+            v_b = hcat(v_b,exact_v(v₀,b,τ,ω[end]))
             # Store positions for returning
             x = hcat(x,xᵢ)
             v = hcat(x,vᵢ)
@@ -106,19 +107,19 @@ function analytic_solve(x₀::Vector{Float64},v₀::Vector{Float64},t::Vector{Fl
             i = 2
             while (t[i] < t[end])
                 # Loop over timesteps until boundary crossing
-                x = hcat(x,exact_x(v₀,x₀,b,tᵢ[i],ω))
-                v = hcat(v,exact_v(v₀,b,tᵢ[i],ω))
+                x = hcat(x,exact_x(v₀,x₀,b,tᵢ[i],ω[end]))
+                v = hcat(v,exact_v(v₀,b,tᵢ[i],ω[end]))
                 chk = eventfn(x[:,end-1:end])
                 if chk < 0.
                     # If crossing detected comput the exact position
-                    ex(t) = exact_x(v₀,x₀,b,t,ω)[3]
+                    ex(t) = exact_x(v₀,x₀,b,t,ω[end])[3]
                     τ = find_zero(ex,(tᵢ[i-1],tᵢ[i+1]),Bisection(),atol=1.e-15)
-                    x_b = hcat(x_b,exact_x(v₀,x₀,b,τ,ω))
-                    v_b = hcat(v_b,exact_v(v₀,b,τ,ω))
+                    x_b = hcat(x_b,exact_x(v₀,x₀,b,τ,ω[end]))
+                    v_b = hcat(v_b,exact_v(v₀,b,τ,ω[end]))
                     x = hcat(x)
                     v = hcat(v)
                     append!(τ_b,τ)
-                    lvol = lvol + Int(sign(v_b[3,end]))
+                    lvol += Int(sign(v_b[3,end]))
                     t_f = τ #For exit condition
                     break
                 end
@@ -127,8 +128,8 @@ function analytic_solve(x₀::Vector{Float64},v₀::Vector{Float64},t::Vector{Fl
         end
         k += 1
         if mod(k,2) == 0
-            x_bp = x_bar(v_b[:,k-1],b₁[:,k-1],τ_b[k-1])
-            x_bm = x_bar(v_b[:,k],b₁[:,k],τ_b[k])
+            x_bp = x_bar(v_b[:,k-1],b₁[:,k-1],τ_b[k-1],ω[end-1])
+            x_bm = x_bar(v_b[:,k],b₁[:,k],τ_b[k],ω[end])
             x̄ = hcat(x̄,average_orbit(x_bp,x_bm,τ_b[k-1],τ_b[k]))
         end
         # Set all params for next phase
@@ -163,9 +164,9 @@ function gc(x₀,v₀,B) #GC position
 end
 
 ### Functions for computing the average drift ###
-function x_bar(v₀,b,τ)
+function x_bar(v₀,b,τ,ω)
     # ONLY WORKS SINCE ω=1
-    x_bar = dot(v₀,b)*b*τ + 2*dot(v₀,[0,0,1])*cross([0,0,1],b)
+    x_bar = dot(v₀,b)*b*τ + 2/ω*dot(v₀,[0,0,1])*cross([0,0,1],b)
     return x_bar
 end
 
@@ -192,4 +193,5 @@ function bound_time(ω,b)
     end
     return τ
 end
+
 

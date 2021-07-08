@@ -3,7 +3,7 @@
 #=
     ORBIT SOLVER
 =#
-function solve_orbit!(p::particle,ODE,t_f;method="RK4")
+function solve_orbit!(p::particle,ODE,t_f;method=:RK4)
 
     # Used as an iterator this will update the particle object provided
 
@@ -59,7 +59,7 @@ end
 
 
 
-function run_sim!(f::sim,ODE,t_f;method="RK4")
+function run_sim!(f::sim,ODE,t_f;method=:RK4)
     # INTERFACE FOR solving simulations
     for i = 1:f.nparts
         solve_orbit!(f.sp[i],ODE,t_f,method=method)
@@ -68,9 +68,9 @@ function run_sim!(f::sim,ODE,t_f;method="RK4")
 end
 
 
-function integrate!(ODE::Function,xv::Vector{Float64},t;eventfn=nothing,method="RK4")
+function integrate!(ODE::Function,xv::Vector{Float64},t;eventfn=nothing,method=:RK4)
 
-    if method=="RK4"
+    if method==:RK4
         integrator = RK4
     end
 

@@ -7,7 +7,7 @@
 #=
 Guiding center and full orbits moving through Z=0 plane
 =#
-guidingcenter = false
+guidingcenter = :fullorbit
 gc₀ = [0., 0., 0.]
 v₀ = [1.,0.,0.]
 Δt = 1.e-3
@@ -36,13 +36,23 @@ run_sim!(f,ODE,t_f)
 fe = analytic_solve(f,Bfield,crossing=true,eventfn=event)
 
 
+
+x₀ = [[0.,0.,x] for x in 0.1:0.1:0.5]
+nparts = length(x₀)
+
+g = sim(nparts,x₀,v₀,guidingcenter,Δt,Bfield,2,gc_initial=false)
+run_sim!(g,ODE,t_f)
+ge = analytic_solve(f,Bfield,crossing=true,eventfn=event)
+
+
+
 #=
     Compute the GC positions to add to plot
 =#
 ODE_GC₁ = forces(B₁,force=MagneticForce_GC)
-gcsim₁ = particle(gc₀,v₀,true,Δt,Bfield[1],1)
+gcsim₁ = particle(gc₀,v₀,:guidingcentre,Δt,Bfield[1],1)
 ODE_GC₂ = forces(B₂,force=MagneticForce_GC)
-gcsim₂ = particle(gc₀,v₀,true,Δt,Bfield[2],1)
+gcsim₂ = particle(gc₀,v₀,:guidingcentre,Δt,Bfield[2],1)
 
 solve_orbit!(gcsim₁,ODE_GC₁,t_f)
 solve_orbit!(gcsim₂,ODE_GC₂,t_f)
@@ -84,7 +94,6 @@ end
 function plt_avprojection(fe,gc₁,gc₂)
     # AVERAGE ORBIT
     # cp = palette(:tab20)
-
     plt = plot(xlabel="x",ylabel="y",legend=true,dpi=600,framestyle=:classic)
     for k = 1:f.nparts
         t = range(fe.sp[k].t_boundary[2],stop=fe.sp[k].t[end],length=100)
@@ -95,10 +104,8 @@ function plt_avprojection(fe,gc₁,gc₂)
         # plot!(plt,ave[1,:],ave[2,:],label=string("gc₀=",f.sp[k].gc[3,1]))
         plot!(plt,ave[1,:],ave[2,:],label="gc_z=$(@sprintf("%.1e",f.sp[k].gc[3,1]))")
     end
-
     plot!(plt,gc₁.x[1,:],gc₁.x[2,:],linestyle=:dash,label="z<0 field")
     plot!(plt,gc₂.x[1,:],gc₂.x[2,:],linestyle=:dash,label="z>0 field")
-
     return plt
 end
 
@@ -113,7 +120,62 @@ end
 
 
 
-fav = plt_avprojection(fe,gcsim₁,gcsim₂)
+function plt_gcavproj(f,fe,gc₁,gc₂;n=1)
+    cp = palette(:tab20)
 
+    plt = plot(xlabel="x",ylabel="y",legend=true,dpi=600,framestyle=:classic)
+
+
+    gcp = zeros(2,length(f.sp[n].lvol))
+    gcp .= NaN
+    gcm = zeros(2,length(f.sp[n].lvol))
+    gcm .= NaN
+
+    z_p = findall(x->x == 1,f.sp[n].lvol)
+    z_m = findall(x->x == 2,f.sp[n].lvol)
+
+    gcp[:,z_p] = f.sp[n].gc[1:2,z_p]
+    gcm[:,z_m] = f.sp[n].gc[1:2,z_m]
+
+    plot!(plt,gcp[1,:],gcp[2,:],color=cp[n],label=string("Δt=",f.sp[n].Δt[1],"z<0"))
+    plot!(plt,gcm[1,:],gcm[2,:],color=cp[n],label=string("Δt=",f.sp[n].Δt[1],"z>0"))
+
+
+
+    t = range(fe.sp[n].t_boundary[2],stop=fe.sp[n].t[end],length=100)
+    ave = zeros(3,length(t))
+    for i = 1:length(t)
+        ave[:,i] = fe.sp[n].avetraj[:,2] * t[i]
+    end
+    # plot!(plt,ave[1,:],ave[2,:],label=string("gc₀=",f.sp[k].gc[3,1]))
+    plot!(plt,ave[1,:],ave[2,:],label="gc_z=$(@sprintf("%.1e",f.sp[n].gc[3,1]))")
+
+    plot!(plt,gc₁.x[1,:],gc₁.x[2,:],linestyle=:dash,label="z<0 field")
+    plot!(plt,gc₂.x[1,:],gc₂.x[2,:],linestyle=:dash,label="z>0 field")
+
+    return plt
+end
+
+
+
+
+
+fav = plt_avprojection(fe,gcsim₁,gcsim₂)
 savefig(fav,"Figures//movingPart_cdB.pdf")
+
+gca = plt_gcprojection(f,gcsim₁,gcsim₂)
+savefig(gca,"Figures//movingPart_cdb_gc.pdf")
+
+
+gca = plt_gcprojection(g,gcsim₁,gcsim₂)
+savefig(gca,"Figures//movingPart_cdb_gc_upper.pdf")
+
+
+
+
+gcf = plt_gcavproj(f,fe,gcsim₁,gcsim₂,n=5)
+savefig(gcf,"Figures//movingPart_gcav.pdf")
+
+
+
 

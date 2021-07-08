@@ -28,7 +28,7 @@ mutable struct particle
     # Position and time things
     x           :: Array{Float64}
     v           :: Array{Float64}
-    gc_or_fo    :: Bool #True == GC
+    gc_or_fo    :: Symbol #True == GC
     t           :: Array{Float64}
     Δt          :: Float64
     # Functions
@@ -38,12 +38,19 @@ mutable struct particle
     gc          :: Array{Float64}
 
     # Constructor to build easier
-    function particle(x::Vector{Float64},v::Vector{Float64},mode,Δt,Bfield,lvol;gc_initial=true)
+    function particle(x::Vector{Float64},v::Vector{Float64},mode::Symbol,Δt,Bfield,lvol;gc_initial=true)
         # Check the magnetic field type
         if typeof(Bfield) <: Function
             B = Bfield
         elseif typeof(Bfield) <: Vector{Function}
             B = Bfield[lvol]
+        end
+
+        # Check the mode input
+        mode == :fo ? mode = :fullorbit : nothing
+        mode == :gc ? mode = :guidingcentre : nothing
+        if mode ∉ [:fullorbit,:guidingcentre]
+            @warn "mode not defined, switching to full orbit"
         end
 
         x₀ = x
@@ -65,7 +72,7 @@ mutable struct sim
     nparts  :: Int64 
     sp      :: Vector{particle}
 
-    function sim(nparts::Int,x₀::VectorVector,v₀::VectorVector,mode::Bool,Δt::VectorFloat,Bfield,lvol::Int64;gc_initial=true)
+    function sim(nparts::Int,x₀::VectorVector,v₀::VectorVector,mode::Symbol,Δt::VectorFloat,Bfield,lvol::Int64;gc_initial=true)
         
         if typeof(x₀) == Vector{Float64}
             # Ensure position can be read
