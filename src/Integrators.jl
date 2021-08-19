@@ -16,13 +16,6 @@ function solve_orbit!(p::particle,ODE,t_f;method=:RK4)
 
     crossing = false
 
-    # if !p.gc_or_fo
-    #     EOM(x,t,B) = ODE.EOM(x,t,B)
-    # else
-    #     EOM(x,t,B) = ODE.EOM_GC(x,t,B)
-    # end
-
-    
     # Main time loop
     while p.t[end] < t_f
         xv = vcat(p.x[:,end], p.v[:,end])
@@ -69,7 +62,7 @@ end
 
 
 function integrate!(ODE::Function,xv::Vector{Float64},t;eventfn=nothing,method=:RK4)
-
+    # CURRENTLY NOT USED
     if method==:RK4
         integrator = RK4
     end
@@ -111,9 +104,9 @@ function RK4(fₓ::Function,x₀::Vector{Float64},t::Vector{Float64};eventfn=not
     h = 0.
     x[:,1] = x₀
 
-    aᵢⱼ = [[1/2] , [0 , 1/2] , [0 , 0 , 1]]
-    bᵢ = [1/6, 1/3, 1/3, 1/6]
-    cᵢ = [1/2, 1/2, 1]
+    aᵢⱼ = [[1/2.] , [0. , 1/2.] , [0. , 0. , 1.]]
+    bᵢ = [1/6., 1/3., 1/3., 1/6.]
+    cᵢ = [1/2., 1/2., 1.]
 
     i = 1
 
@@ -135,9 +128,9 @@ function RK4(fₓ::Function,x₀::Vector{Float64},t::Vector{Float64};eventfn=not
         if dchk
             event = eventfn(x[:,i:i+1])
             if event < 0.
-                t, h, xn = event_loc(fₓ,x[:,i:i+1],k,h,t)
+                t, h, xₙ = event_loc(fₓ,x[:,i:i+1],k,h,t)
                 t[i+1] = t[i] + h
-                x[:,i+1] = xn
+                x[:,i+1] = xₙ
                 crossing = true
             elseif event == 0
                 crossing = true
@@ -173,13 +166,15 @@ function event_loc(dvdt::Function,x::Array{Float64},k::Array{Float64},h::Float64
     return t, h, xₙ
 end
 
+#= INTERPOLATING FUNCTIONS =#
+
 function cubic_hermite(τ::Float64,h::Float64,x::Array{Float64},k::Array{Float64},f₁::Array{Float64})
     bar_x = (1-τ)*x[:,1] + τ*x[:,2] + τ*(τ-1)*((1-2*τ)*(x[:,2]-x[:,1]) + (τ-1)*h*k[:,1] + τ*h*f₁)
     return bar_x
 end
 
 function boostrapped(τ::Float64,h::Float64,x::Array{Float64},k₁::Array{Float64},f₁::Array{Float64},fₘ::Array{Float64})
-    # Bootstrapped to quartic
+    # Vector function Bootstrapped to quartic
     d₀ = (τ-1)^2 * (15/4 * τ^2 + 2*τ + 1)
     d₁ = τ*(τ-1)^2 * (1-τ*35/8)
     d₂ = 1-d₀
@@ -190,7 +185,7 @@ function boostrapped(τ::Float64,h::Float64,x::Array{Float64},k₁::Array{Float6
 end
 
 function boostrapped(τ::Float64,h::Float64,x::Array{Float64},k₁::Float64,f₁::Float64,fₘ::Float64)
-    # Bootstrapped to quartic
+    # Scalar function bootstrapped to quartic
     d₀ = (τ-1)^2 * (15/4 * τ^2 + 2*τ + 1)
     d₁ = τ*(τ-1)^2 * (1-τ*35/8)
     d₂ = 1-d₀
@@ -201,7 +196,7 @@ function boostrapped(τ::Float64,h::Float64,x::Array{Float64},k₁::Float64,f₁
 end
 
 function dt_bootstrapped(τ::Float64,h::Float64,x::Array{Float64},k₁::Array{Float64},f₁::Array{Float64},fₘ::Array{Float64})
-
+    # Derivative of vector function
     d₀ = 2*(τ-1)*(15/4*τ^2 + 2*τ + 1) + (τ-1)^2 * (15*τ/2 + 2)
     d₁ = (τ-1)^2 * (1-35*τ/8) + 2*τ*(τ-1) * (1-35*τ/8) - 35*τ*(τ-1)^2 / 8
     d₂ = -1*d₀
@@ -212,7 +207,7 @@ function dt_bootstrapped(τ::Float64,h::Float64,x::Array{Float64},k₁::Array{Fl
 end
 
 function dt_bootstrapped(τ::Float64,h::Float64,x::Array{Float64},k₁::Float64,f₁::Float64,fₘ::Float64)
-
+    # Derivative of scalar function
     d₀ = 2*(τ-1)*(15/4*τ^2 + 2*τ + 1) + (τ-1)^2 * (15*τ/2 + 2)
     d₁ = (τ-1)^2 * (1-35*τ/8) + 2*τ*(τ-1) * (1-35*τ/8) - 35*τ*(τ-1)^2 / 8
     d₂ = -1*d₀

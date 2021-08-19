@@ -92,7 +92,7 @@ function analytic_solve(x₀::Vector{Float64},v₀::Vector{Float64},t::Vector{Fl
             v_b = hcat(v_b,exact_v(v₀,b,τ,ω[end]))
             # Store positions for returning
             x = hcat(x,xᵢ)
-            v = hcat(x,vᵢ)
+            v = hcat(v,vᵢ)
             # Update the field to use
             lvol = lvol + Int(sign(v_b[3,end]))
         else
@@ -105,23 +105,27 @@ function analytic_solve(x₀::Vector{Float64},v₀::Vector{Float64},t::Vector{Fl
                 tᵢ = tᵢ[tᵢ .<= 0]
             end
             i = 2
+            xₜₘₚ = x[:,end]
+            vₜₘₚ = v[:,end]
             while (t[i] < t[end])
-                # Loop over timesteps until boundary crossing
-                x = hcat(x,exact_x(v₀,x₀,b,tᵢ[i],ω[end]))
-                v = hcat(v,exact_v(v₀,b,tᵢ[i],ω[end]))
-                chk = eventfn(x[:,end-1:end])
-                if chk < 0.
-                    # If crossing detected comput the exact position
-                    ex(t) = exact_x(v₀,x₀,b,t,ω[end])[3]
-                    τ = find_zero(ex,(tᵢ[i-1],tᵢ[i+1]),Bisection(),atol=1.e-15)
-                    x_b = hcat(x_b,exact_x(v₀,x₀,b,τ,ω[end]))
-                    v_b = hcat(v_b,exact_v(v₀,b,τ,ω[end]))
-                    x = hcat(x)
-                    v = hcat(v)
-                    append!(τ_b,τ)
-                    lvol += Int(sign(v_b[3,end]))
-                    t_f = τ #For exit condition
-                    break
+            # Loop over timesteps until boundary crossing
+            xₜₘₚ = hcat(xₜₘₚ,exact_x(v₀,x₀,b,tᵢ[i],ω[end]))
+            vₜₘₚ = hcat(vₜₘₚ,exact_v(v₀,b,tᵢ[i],ω[end]))
+            # x = hcat(x,exact_x(v₀,x₀,b,tᵢ[i],ω[end]))
+            # v = hcat(v,exact_v(v₀,b,tᵢ[i],ω[end]))
+            chk = eventfn(xₜₘₚ[:,end-1:end])
+            if chk < 0.
+                # If crossing detected comput the exact position
+                ex(t) = exact_x(v₀,x₀,b,t,ω[end])[3]
+                τ = find_zero(ex,(tᵢ[i-1],tᵢ[i+1]),Bisection(),atol=1.e-15)
+                x_b = hcat(x_b,exact_x(v₀,x₀,b,τ,ω[end]))
+                v_b = hcat(v_b,exact_v(v₀,b,τ,ω[end]))
+                x = hcat(x,xₜₘₚ[:,2:end-1])
+                v = hcat(v,vₜₘₚ[:,2:end-1])
+                append!(τ_b,τ)
+                lvol += Int(sign(v_b[3,end]))
+                t_f = τ #For exit condition
+                break
                 end
                 i += 1
             end
