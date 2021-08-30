@@ -21,10 +21,10 @@ tol = 1.e-14
 
 
 # Simulation parameters
-nparts = 8
+nparts = 6
 
 guidingcenter = :fullorbit
-gc₀ = [0., 0., 0.]
+gc₀ = [0., 0., -4.]
 v₀ = [1.,0.,0.]
 # Δt = [2.0^-i for i in 1:nparts]
 Δt = [1.e-1/2^(i-1) for i in 1:nparts]
@@ -154,13 +154,25 @@ end
 
 
 
+function plt_full_error(sim,exact,npart)
+
+    x = zeros(Float64,size(sim.sp[npart].x)[2])
+    for i = 1:size(sim.sp[npart].x)[2]
+        x[i] = norm(sim.sp[npart].x[:,i] .- exact.sp[npart].x[:,i])/norm(exact.sp[npart].x[:,i])
+    end
+
+    plta = plot(sim.sp[npart].t,x)
+    savefig(plta,"Figures/x_total_error.pdf")
+
+end
+
 
 
 #========== PLOTTING ==========#
-
-plt_momentum_conservation(f,[1,4,8])
+plt_momentum_conservation(f,[1,4,6])
 plt_error(f,g)
 
+plt_full_error(f,g,6)
 
 
 

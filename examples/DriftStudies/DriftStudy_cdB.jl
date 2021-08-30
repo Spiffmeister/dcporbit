@@ -1,8 +1,10 @@
 #=
-    Performing convergence study
+    Tracing orbits moving through the discontinuity for the paper
 =#
 
-
+# using Pkg
+# Pkg.activate(".")
+# using orbit
 
 #=
 Guiding center and full orbits moving through Z=0 plane
@@ -19,7 +21,7 @@ end
 
 α = π/6
 B₁(x) = [cos(α),sin(α),0.]
-B₂(x) = 2.0*[cos(α),-sin(α),0.]
+B₂(x) = [cos(α),-sin(α),0.]
 Bfield = [B₁,B₂]
 
 ODE = forces(Bfield,event=event)

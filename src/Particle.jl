@@ -3,8 +3,8 @@
 =#
 const q = m = 1.
 
-VectorVector      = Union{Vector{Float64},Vector{Vector{Float64}}}
-VectorFloat      = Union{Float64,Vector{Float64}}
+VectorVector    = Union{Vector{Float64},Vector{Vector{Float64}}}
+VectorFloat     = Union{Float64,Vector{Float64}}
 ArrayFunction   = Union{Array{Function},Function}
 # ArrayBool   = Union{Array{Bool},Bool}
 
@@ -73,7 +73,7 @@ mutable struct sim
     nparts  :: Int64 
     sp      :: Vector{particle}
 
-    function sim(nparts::Int,x₀::VectorVector,v₀::VectorVector,mode::Symbol,Δt::VectorFloat,Bfield,lvol::Int64;gc_initial=true)
+    function sim(nparts::Int,x₀::VectorVector,v₀::VectorVector,mode::Symbol,Δt::VectorFloat,Bfield,lvol::Union{Int64,Vector{Int64}};gc_initial=true)
         
         if typeof(x₀) == Vector{Float64}
             # Ensure position can be read

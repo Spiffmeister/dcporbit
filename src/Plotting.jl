@@ -5,6 +5,11 @@
     INTERESTING PLOTS
 =#
 
+
+
+
+
+
 function plt_orbit(p::Union{particle,exact_particle};lab="Computed")
     # Plot the solution in 3D
     plt = plot3d(p.x[1,:],p.x[2,:],p.x[3,:],label=lab,guidefontsize=16)
@@ -27,6 +32,8 @@ function plt_gyroradius(v::Array,B::Function,t::Array)
 end
 
 
+
+#=
 
 #=
     CONVERGENCE TESTS
@@ -224,3 +231,4 @@ function plt_momcons(p,xy;n=[],tdc=[],lab="p_x",savfig=false,format="png")
 end
 
 
+=#

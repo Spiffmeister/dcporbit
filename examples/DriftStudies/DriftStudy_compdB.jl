@@ -1,7 +1,9 @@
 #=
     Performing convergence study
 =#
-
+using Pkg
+Pkg.activate(".")
+using orbit
 
 
 #=
