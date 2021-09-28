@@ -158,7 +158,7 @@ end
 cp = palette(:tab20)
 
 # Plot
-pav = plot(xlabel="x",ylabel="y",legend=:topright,framestyle=:classic,dpi=600)
+pav = plot(xlabel="x",ylabel="y",legend=:topright,framestyle=:classic,dpi=600,foreground_color_grid=:lightgray)
 
 # Particle 1
 gc1 = plot!(pav,gcsim₁.x[1,:],gcsim₁.x[2,:],color=cp[1],label="R1 Guiding centre")
@@ -166,17 +166,17 @@ fo1 = plot!(pav,f.sp[1].x[1,:],f.sp[1].x[2,:],color=cp[1],label="R1 Full orbit")
 
 # Crossing particle 1
 gcp, gcm = comp_avtraj(f.sp[2])
-cross1 = plot!(pav,gcp[1,:],gcp[2,:],color=cp[3],label="R1")
+cross1 = plot!(pav,gcp[1,:],gcp[2,:],color=cp[3],label="C1")
 plot!(pav,gcm[1,:],gcm[2,:],color=cp[3],label="")
-crossav1 = plot!(pav,fe.sp[2].avetraj[1,2]*fe.sp[2].t,fe.sp[2].avetraj[2,2]*fe.sp[2].t,color=cp[3],linestyle=:dash,label="R1 average drift")
-crossFO1 = plot!(pav,f.sp[2].x[1,:],f.sp[2].x[2,:],color=cp[3],linestyle=:dashdot,linealpha=0.6,label="R1 full orbit")
+crossav1 = plot!(pav,fe.sp[2].avetraj[1,2]*fe.sp[2].t,fe.sp[2].avetraj[2,2]*fe.sp[2].t,color=cp[3],linestyle=:dash,label="C1 average drift")
+crossFO1 = plot!(pav,f.sp[2].x[1,:],f.sp[2].x[2,:],color=cp[3],linestyle=:dashdot,linealpha=0.6,label="C1 full orbit")
 
 # Crossing particle 2
 gcp, gcm = comp_avtraj(f.sp[3])
-cross2 = plot!(pav,gcp[1,:],gcp[2,:],color=cp[5],label="R2")
+cross2 = plot!(pav,gcp[1,:],gcp[2,:],color=cp[5],label="C2")
 plot!(pav,gcm[1,:],gcm[2,:],color=cp[5],label="")
-crossav2 = plot!(pav,fe.sp[3].avetraj[1,2]*fe.sp[3].t,fe.sp[3].avetraj[2,2]*fe.sp[3].t,color=cp[5],linestyle=:dash,label="R2 average drift")
-crossFO2 = plot!(pav,f.sp[3].x[1,:],f.sp[3].x[2,:],color=cp[5],linestyle=:dashdot,linealpha=0.6,label="R2 full orbit")
+crossav2 = plot!(pav,fe.sp[3].avetraj[1,2]*fe.sp[3].t,fe.sp[3].avetraj[2,2]*fe.sp[3].t,color=cp[5],linestyle=:dash,label="C2 average drift")
+crossFO2 = plot!(pav,f.sp[3].x[1,:],f.sp[3].x[2,:],color=cp[5],linestyle=:dashdot,linealpha=0.6,label="C2 full orbit")
 
 # Particle 4
 gc2 = plot!(pav,gcsim₂.x[1,:],gcsim₂.x[2,:],color=cp[7],label="R2 Guiding Centre")
@@ -184,4 +184,4 @@ fc2 = plot!(pav,f.sp[4].x[1,:],f.sp[4].x[2,:],color=cp[7],label="R2 Full orbit")
 
 
 
-savefig(pav,"Figures//gcav.pdf")
+savefig(pav,"Figures//gcav.eps")
