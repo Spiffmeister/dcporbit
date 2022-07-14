@@ -8,7 +8,8 @@ module orbit
     using Distributed
 
     include("Particle.jl")
-    include("OrbitEqns.jl")
+    include("analytic.jl")
+    include("event_location.jl")
     include("Integrators.jl")
     include("Plotting.jl")
 

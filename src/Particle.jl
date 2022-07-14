@@ -8,7 +8,13 @@ VectorFloat     = Union{Float64,Vector{Float64}}
 ArrayFunction   = Union{Array{Function},Function}
 # ArrayBool   = Union{Array{Bool},Bool}
 
+"""
+    forces
 
+    Sets up the equations of motion for a particle simulation.
+    
+    By default uses MagneticForce a=q(v×B)
+"""
 struct forces
     # Set up the ODEs for the problem
     # Set up the problem
@@ -57,13 +63,13 @@ mutable struct particle
         x₀ = x
         if gc_initial
             # Convert to FO position
-            x = x - guiding_center(x,v,B)
+            x = x - guiding_center(x,v,B(x,0.0))
         else
             # Store the GC position
-            x₀ = x₀ + guiding_center(x,v,B)
+            x₀ = x₀ + guiding_center(x,v,B(x,0.0))
         end
         # Create the particle object
-        new(x,v,mode,[0.],Δt,B(x),[lvol],gc_initial,x₀)
+        new(x,v,mode,[0.],Δt,B(x,0),[lvol],gc_initial,x₀)
     end
 end
 
@@ -125,12 +131,6 @@ end
 
 
 
-#==
-    CONSTRUCTORS
-==#
-
-
-
 
 #=====
     Particle based fns
@@ -139,31 +139,36 @@ end
 function guiding_center(p::particle)
     gc = zeros(length(p.t))
     for i = 1:length(p.t)
-        gc[i] = guiding_center(p.x[:,i],p.v[:,i],p.B[i])
+        gc[i] = guiding_center(p.x[:,i],p.v[:,i],p.t[i],p.B[i])
     end
     return gc
 end
 
-function guiding_center(x::Vector{Float64},v::Vector{Float64},Bfield::Function)
-    B = Bfield(x)
+function guiding_center(x::Vector{Float64},v::Vector{Float64},B::Vector)
     gc = m/q * cross(v,B)/norm(B,2)^2
     return gc
 end
 
+#====
+    EQUATIONS OF MOTION
+====#
+
 function MagneticForce_GC(xv::Vector{Float64},t::Float64,B::Array)
-    # x = xv[1:3]
+    x = xv[1:3]
     v = xv[4:6]
-    v = dot(v,B)/norm(B,2)^2 * B
+    v = dot(v,B(x,t))/norm(B,2)^2 * B
     dvdt = zeros(3)
     xv = vcat(v,dvdt)
     return xv
 end
 
-function MagneticForce(xv::Vector{Float64},t::Float64,B::Array)
-    # x = xv[1:3]
+function MagneticForce(xv::Vector{Float64},t::Float64,B::Vector)
+    x = xv[1:3]
     v = xv[4:6]
     dvdt = q/m*cross(v,B)
     xv = vcat(v,dvdt)
     return xv
 end
 
+function MagneticForce_Hamiltonian(qp::Vector{Float64},t::Float64,A::Function)
+end
