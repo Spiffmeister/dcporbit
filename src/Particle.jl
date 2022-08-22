@@ -11,9 +11,9 @@ ArrayFunction   = Union{Array{Function},Function}
 """
     forces
 
-    Sets up the equations of motion for a particle simulation.
+Sets up the equations of motion for a particle simulation.
     
-    By default uses MagneticForce a=q(v×B)
+By default uses [`MagneticForce`](@ref): ``\\frac{\\text{d}^2 x}{\\text{d} t^2} =q(v\\times B)``
 """
 struct forces
     # Set up the ODEs for the problem
@@ -29,7 +29,9 @@ struct forces
 
 end
 
-
+"""
+    particle
+"""
 mutable struct particle
     # Position and time things
     x           :: Array{Float64}
@@ -44,7 +46,7 @@ mutable struct particle
     gc          :: Array{Float64}
 
     # Constructor to build easier
-    function particle(x::Vector{Float64},v::Vector{Float64},mode::Symbol,Δt,Bfield,lvol;gc_initial=true)
+    function particle(x::Vector,v::Vector,mode::Symbol,Δt,Bfield,lvol;gc_initial=true)
         # Check the magnetic field type
         if typeof(Bfield) <: Function
             B = Bfield

@@ -24,11 +24,11 @@ function solve_orbit!(p::particle,ODE,t_f;method=:RK4,sample_factor=1)
     # Set up the equations of motion
     Btype = typeof(ODE.MagneticField)
     if Btype <: Vector{Function}
-        B = ODE.MagneticField[lvol]
+        B = ODE.MagneticField[p.lvol[1]]
     else
         B = ODE.MagneticField
     end
-    fₓ(x,t) = ODE.EOM(x,t,B(x,t))
+    # fₓ(x,t) = ODE.EOM(x,t,B(x,t))
 
     sample = 0
 
@@ -37,29 +37,31 @@ function solve_orbit!(p::particle,ODE,t_f;method=:RK4,sample_factor=1)
         tᵢ = [p.t[end], p.t[end]+p.Δt]
         
         # Integrate
-        xv, t, Δt_tmp = integrator(fₓ,xv[:,end],tᵢ)
+        xv, t, Δt_tmp, k = integrator((x,t) -> ODE.EOM(x,t,B(x,t)),xv[:,end],tᵢ)
         
         if discontinuity_present
             # If the field is discontinuous (or if an event is being tracked)
             event_info = ODE.event(xv)
-            if !event_info[1]
+            if event_info == 1
                 # If the particle does not cross
-                if mod(t,sample_factor*p.Δt) == 0
+                if mod(t[end],sample_factor*p.Δt) == 0
                     p = storage(p,xv,t,B)
                 end
             else
                 # If the particle does cross
-                t, h, xv[:,2] = event_loc(fₓ,xv,k,h,t)
-                lvol = event_info[2]
+                t, Δt, xv[:,2] = event_loc((x,t) -> ODE.EOM(x,t,B(x,t)),xv,k,Δt_tmp,t)
+                p.lvol[end] == 1 ? lvol = 2 : lvol = 1
+                # lvol = event_info
                 p = storage(p,xv,t,B,lvol=lvol)
                 B = ODE.MagneticField[lvol] #Update the field
-                fₓ(x,t) = ODE.EOM(x,t,B(x,t)) #Update forces
+                # fₓ(x,v,t) = ODE.EOM(x,t,B(x,v,t)) #Update forces
             end
         else
             # If the field is continuous
             if mod(sample,sample_factor) == 0
                 p = storage(p,xv,t,B)
             end
+            Δt = Δt_tmp
         end
         sample += 1
 
@@ -68,7 +70,9 @@ function solve_orbit!(p::particle,ODE,t_f;method=:RK4,sample_factor=1)
 end
 
 
-
+"""
+    storage(p::particle,xv,t,B;lvol=nothing)
+"""
 function storage(p::particle,xv,t,B;lvol=nothing)
     # Particle storage function, called whenever event triggered or sample_factor is
     p.x = hcat(p.x,xv[1:3,2])
@@ -84,6 +88,9 @@ function storage(p::particle,xv,t,B;lvol=nothing)
     end
 end
 
+"""
+    run_sim!(f::sim,ODE,t_f;method=:RK4)
+"""
 function run_sim!(f::sim,ODE,t_f;method=:RK4)
     # INTERFACE FOR solving simulations
     for i = 1:f.nparts
@@ -124,6 +131,9 @@ end
 
 
 #== INTEGRATORS ==#
+"""
+    RK4(fₓ::Function,x₀::Vector{Float64},t::Vector{Float64})
+"""
 function RK4(fₓ::Function,x₀::Vector{Float64},t::Vector{Float64})
     # Standard RK4
 
@@ -152,7 +162,7 @@ function RK4(fₓ::Function,x₀::Vector{Float64},t::Vector{Float64})
         h = t[i+1] - t[i]
         i += 1
     end
-    return x, t, h
+    return x, t, h, k
 end
 
 function symplectic_euler(H::Function,x₀::Vector{Float64},t::Vector{Float64})
