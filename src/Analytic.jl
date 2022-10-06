@@ -3,6 +3,36 @@
 ===#
 
 
+
+
+struct exact_particle{T<:Real}
+    # Structure for hold the exact solutions to particles
+    x           :: Array{T}
+    v           :: Array{T}
+    x_boundary  :: Array{T}
+    v_boundary  :: Array{T}
+    t           :: Vector{T}
+    t_boundary  :: Vector{T}
+    avetraj     :: Array{T}
+end
+
+
+
+mutable struct analytic_sim
+    # Container for multiple analytic particles
+    nparts  :: Int64
+    sp      :: Array{exact_particle}
+
+    function analytic_sim(nparts::Int64)
+        parts = Array{exact_particle}(undef,nparts)
+        new(nparts,parts)
+    end
+end
+
+
+
+
+
 #===
     METHODS FOR SOLVING PARTICLES
 ===#
