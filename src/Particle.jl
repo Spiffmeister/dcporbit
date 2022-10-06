@@ -1,6 +1,12 @@
 #=
     Particle class and constants
 =#
+struct OrbitMode{T} end
+const GuidingCentre = OrbitMode{:GuidingCentre}()
+const FullOrbit = OrbitMode{:FullOrbit}()
+
+
+
 const q = m = 1.
 
 VectorVector    = Union{Vector{Float64},Vector{Vector{Float64}}}
@@ -32,21 +38,20 @@ end
 """
     particle
 """
-mutable struct particle
+mutable struct particle{T<:Real}
     # Position and time things
-    x           :: Array{Float64}
-    v           :: Array{Float64}
-    gc_or_fo    :: Symbol #True == GC
-    t           :: Array{Float64}
-    Δt          :: Float64
+    x           :: Array{T}
+    v           :: Array{T}
+    mode        :: OrbitMode
+    t           :: Array{T}
     # Functions
-    B           :: Array{Float64}
+    B           :: Array{T}
     lvol        :: Vector{Int}
     gc_init     :: Bool
-    gc          :: Array{Float64}
+    gc          :: Array{T}
 
     # Constructor to build easier
-    function particle(x::Vector,v::Vector,mode::Symbol,Δt,Bfield,lvol;gc_initial=true)
+    function particle{T}(x::Vector,v::Vector,mode::OrbitMode,Δt::Real,Bfield,gc_initial=true,lvol::Int=1) where {T<:Real}
         # Check the magnetic field type
         if typeof(Bfield) <: Function
             B = Bfield
@@ -54,34 +59,31 @@ mutable struct particle
             B = Bfield[lvol]
         end
 
-        # Check the mode input
-        mode ∈ [:fo,:fullorbit] ? mode = :fullorbit : nothing
-        mode ∈ [:gc,:guidingcentre] ? mode = :guidingcentre : nothing
-        if mode ∉ [:fullorbit,:guidingcentre]
-            println(mode)
-            @warn "mode not defined, switching to full orbit"
-        end
-
         x₀ = x
         if gc_initial
             # Convert to FO position
-            x = x - guiding_center(x,v,B(x,0.0))
+            x = x - guiding_center(v,B)
         else
             # Store the GC position
-            x₀ = x₀ + guiding_center(x,v,B(x,0.0))
+            x₀ = x₀ + guiding_center(v,B)
         end
         # Create the particle object
-        new(x,v,mode,[0.],Δt,B(x,0),[lvol],gc_initial,x₀)
+        new(x,v,mode,[0.],B(x,0),[lvol],gc_initial,x₀)
     end
 end
 
+particle(x::Vector,v::Vector,mode::OrbitMode,Δt::Real,Bfield;gc_initial=true,lvol=1) where {T<:Real} = 
+    particle(x,v,mode,Δt,Bfield,gc_initial,lvol)
 
-mutable struct sim
+
+"""
+"""
+struct sim
     # Vector that holds particle
-    nparts  :: Int64 
+    nparts  :: Int
     sp      :: Vector{particle}
 
-    function sim(nparts::Int,x₀::VectorVector,v₀::VectorVector,mode::Symbol,Δt::VectorFloat,Bfield,lvol::Union{Int64,Vector{Int64}};gc_initial=true)
+    function sim(nparts::Int,x₀::Vector,v₀::Vector,mode::Symbol,Δt::VectorFloat,Bfield,lvol::Union{Int64,Vector{Int64}};gc_initial=true)
         
         if typeof(x₀) == Vector{Float64}
             # Ensure position can be read
@@ -108,29 +110,6 @@ mutable struct sim
 end
 
 
-mutable struct exact_particle
-    # Structure for hold the exact solutions to particles
-    x           :: Array{Float64}
-    v           :: Array{Float64}
-    x_boundary  :: Array{Float64}
-    v_boundary  :: Array{Float64}
-    t           :: Vector{Float64}
-    t_boundary  :: Vector{Float64}
-    avetraj     :: Array{Float64}
-end
-
-
-mutable struct analytic_sim
-    # Container for multiple analytic particles
-    nparts  :: Int64
-    sp      :: Array{exact_particle}
-
-    function analytic_sim(nparts::Int64)
-        parts = Array{exact_particle}(undef,nparts)
-        new(nparts,parts)
-    end
-end
-
 
 
 
@@ -141,14 +120,13 @@ end
 function guiding_center(p::particle)
     gc = zeros(length(p.t))
     for i = 1:length(p.t)
-        gc[i] = guiding_center(p.x[:,i],p.v[:,i],p.t[i],p.B[i])
+        gc[i] = guiding_center(p.v[:,i],p.B[i])
     end
     return gc
 end
 
-function guiding_center(x::Vector{Float64},v::Vector{Float64},B::Vector)
-    gc = m/q * cross(v,B)/norm(B,2)^2
-    return gc
+function guiding_center(v::Vector,B::Vector)
+    return m/q * cross(v,B)/norm(B,2)^2
 end
 
 #====
@@ -171,6 +149,23 @@ function MagneticForce(xv::Vector{Float64},t::Float64,B::Vector)
     xv = vcat(v,dvdt)
     return xv
 end
+
+
+
+function MagneticForce_GC!(xv::Vector,B::Array)
+    xv[1:3] .= dot(xv,B)/norm(B,2)^2 * B
+    xv[4:6] .= 0.0
+    xv
+end
+
+function MagneticForce!(xv::Vector,B::Vector)
+    xv[1:3] .= q/m*cross(v,B)
+    xv[4:6] .= 0.0
+    xv
+end
+
+
+
 
 function MagneticForce_Hamiltonian(qp::Vector{Float64},t::Float64,A::Function)
 end
