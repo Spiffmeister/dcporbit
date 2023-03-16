@@ -48,7 +48,7 @@ ODE = forces(Bfield,event=event)
 SINGLE PARTICLE case
 =#
 # Generate the particle data
-f₁ = particle(x₀,v₀,:fo,Δt,Bfield[1],lvol,gc_initial=false)
+f₁ = particle(x₀,v₀,FO,Δt,Bfield[1],lvol=lvol,gc_initial=false)
 # Solve the particles orbit, note the ! since solve_orbit! is an iterator and appends the data to f₁
 solve_orbit!(f₁,ODE,t_f)
 

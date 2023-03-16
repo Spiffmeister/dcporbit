@@ -13,6 +13,7 @@ module orbit
     include("Integrators.jl")
     include("Plotting.jl")
 
+    export FullOrbit, FO, GuidingCentre, GC
     export sim,particle,exact_particle,forces
     export analytic_solve,integrate!,solve_orbit!,run_sim!
     export MagneticForce,MagneticForce_GC

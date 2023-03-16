@@ -2,8 +2,8 @@
     Particle class and constants
 =#
 struct OrbitMode{T} end
-const GuidingCentre = OrbitMode{:GuidingCentre}()
-const FullOrbit = OrbitMode{:FullOrbit}()
+const GuidingCentre = OrbitMode{:GuidingCentre}(); GC = GuidingCentre
+const FullOrbit = OrbitMode{:FullOrbit}(); FO = FullOrbit
 
 
 
@@ -51,7 +51,9 @@ mutable struct particle{T<:Real}
     gc          :: Array{T}
 
     # Constructor to build easier
-    function particle{T}(x::Vector,v::Vector,mode::OrbitMode,Δt::Real,Bfield,gc_initial=true,lvol::Int=1) where {T<:Real}
+    function particle(x::Vector{T},v::Vector{T},mode::OrbitMode,Δt::T,Bfield::Union{Function,Vector{Function}};
+            gc_initial=true,lvol::Int=1) where T
+        
         # Check the magnetic field type
         if typeof(Bfield) <: Function
             B = Bfield
@@ -68,12 +70,12 @@ mutable struct particle{T<:Real}
             x₀ = x₀ + guiding_center(v,B)
         end
         # Create the particle object
-        new(x,v,mode,[0.],B(x,0),[lvol],gc_initial,x₀)
+        new{T}(x,v,mode,[0.],B(x,0),[lvol],gc_initial,x₀)
     end
 end
 
-particle(x::Vector,v::Vector,mode::OrbitMode,Δt::Real,Bfield;gc_initial=true,lvol=1) where {T<:Real} = 
-    particle(x,v,mode,Δt,Bfield,gc_initial,lvol)
+# particle(x::Vector,v::Vector,mode::OrbitMode,Δt::Real,Bfield;gc_initial=true,lvol=1) where {T<:Real} = 
+#     particle(x,v,mode,Δt,Bfield,gc_initial,lvol)
 
 
 """
