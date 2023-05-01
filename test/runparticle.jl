@@ -4,10 +4,10 @@
 
 using Pkg
 Pkg.activate(".")
-using orbit
+using dcporbit
 
 # Is this a guiding center intialisation?
-mode = :fo
+mode = FullOrbit
 # Set initial conditions
 x₀ = [0.,0.,0.]
 v₀ = [1.,0.,0.]
@@ -17,7 +17,7 @@ t_f = 1.e-1
 # Set the magnetic field
 Bfield(x,t) = [0.,0.,1.]
 # Initialise the particle
-p = particle(x₀,v₀,mode,Δt,Bfield,1)
+p = particle(x₀,v₀,mode,Δt,Bfield)
 ODE = forces(Bfield)
 # Run the simulation
 @time solve_orbit!(p,ODE,t_f)

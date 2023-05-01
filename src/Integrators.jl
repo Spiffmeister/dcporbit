@@ -79,7 +79,7 @@ function storage(p::particle,xv,t,B;lvol=nothing)
     p.v = hcat(p.v,xv[4:6,2])
     p.t = vcat(p.t,t[2])
     p.B = hcat(p.B,B(xv[1:3,2],t[2]))
-    p.gc = hcat(p.gc,xv[1:3,2]+guiding_center(xv[1:3,2],xv[4:6,2],B(xv[1:3,2],t[2])))
+    p.gc = hcat(p.gc,xv[1:3,2]+guiding_center(xv[4:6,2],B(xv[1:3,2],t[2])))
     if lvol == nothing
         return p
     else

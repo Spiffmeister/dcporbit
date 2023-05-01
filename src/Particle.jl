@@ -44,6 +44,7 @@ mutable struct particle{T<:Real}
     v           :: Array{T}
     mode        :: OrbitMode
     t           :: Array{T}
+    Δt          :: T
     # Functions
     B           :: Array{T}
     lvol        :: Vector{Int}
@@ -64,13 +65,13 @@ mutable struct particle{T<:Real}
         x₀ = x
         if gc_initial
             # Convert to FO position
-            x = x - guiding_center(v,B)
+            x = x - guiding_center(v,B(x,T(0)))
         else
             # Store the GC position
-            x₀ = x₀ + guiding_center(v,B)
+            x₀ = x₀ + guiding_center(v,B(x₀,T(0)))
         end
         # Create the particle object
-        new{T}(x,v,mode,[0.],B(x,0),[lvol],gc_initial,x₀)
+        new{T}(x,v,mode,[0.],Δt,B(x,0),[lvol],gc_initial,x₀)
     end
 end
 

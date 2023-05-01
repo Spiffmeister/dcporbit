@@ -81,7 +81,7 @@ function analytic_solve(x₀::Vector{Float64},v₀::Vector{Float64},t::Vector{Fl
     end
 
     ω = [abs(q)/m * norm(Bf(x₀,t[1]))]
-    x = x_b = x₀ - guiding_center(x₀,v₀,Bf(x₀,t[1]))
+    x = x_b = x₀ - guiding_center(v₀,Bf(x₀,t[1]))
     v = v_b = v₀
 
     x̄ = Array{Float64,2}(undef,3,0)
