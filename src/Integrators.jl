@@ -13,6 +13,8 @@ function solve_orbit!(p::particle,ODE,t_f;method=:RK4,sample_factor=1)
     # Set the integrator
     if method==:RK4
         integrator = RK4
+    elseif method==:forward_eulers
+        integrator = forward_eulers
     end
     
     # Set up event location related things
@@ -131,8 +133,31 @@ end
 
 
 #== INTEGRATORS ==#
+
+"""
+    eulers(fₓ::Function,x₀::Vector{T},t::Vector{T})
+"""
+function forward_eulers(fₓ::Function,x₀::Vector{T},t::Vector{T}) where T
+    n = length(x₀)
+    m = length(t)
+    x = zeros(n,m)
+    h = t[2]-t[1]
+
+    x[:,1] = x₀
+    
+    i = 1
+    while i < m
+        x[:,i+1] = x[:,i] + h*fₓ(x[:,i],t[i])
+        h = t[i+1] - t[i]
+        i += 1
+    end
+    return x, t, h, 0.0
+end
+
+
 """
     RK4(fₓ::Function,x₀::Vector{Float64},t::Vector{Float64})
+Pushes the solution 1 time step using 4th order Runge-Kutta scheme
 """
 function RK4(fₓ::Function,x₀::Vector{Float64},t::Vector{Float64})
     # Standard RK4
@@ -165,6 +190,8 @@ function RK4(fₓ::Function,x₀::Vector{Float64},t::Vector{Float64})
     return x, t, h, k
 end
 
+"""
+"""
 function symplectic_euler(H::Function,x₀::Vector{Float64},t::Vector{Float64})
     # Implicit eulers function.
 

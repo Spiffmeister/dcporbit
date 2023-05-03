@@ -1,6 +1,10 @@
 #=
     Particle class and constants
 =#
+"""
+    OrbitMode{T}
+Either GuidingCentre or FullOrbit
+"""
 struct OrbitMode{T} end
 const GuidingCentre = OrbitMode{:GuidingCentre}(); GC = GuidingCentre
 const FullOrbit = OrbitMode{:FullOrbit}(); FO = FullOrbit
@@ -35,10 +39,13 @@ struct forces
 
 end
 
+Base.show(io::IO, F::forces) = print("Magnetic force function generated.")
+
+
 """
     particle
 """
-mutable struct particle{T<:Real}
+mutable struct particle{T}
     # Position and time things
     x           :: Array{T}
     v           :: Array{T}
@@ -77,6 +84,9 @@ end
 
 # particle(x::Vector,v::Vector,mode::OrbitMode,Δt::Real,Bfield;gc_initial=true,lvol=1) where {T<:Real} = 
 #     particle(x,v,mode,Δt,Bfield,gc_initial,lvol)
+
+
+Base.show(io::IO, P::particle) = print(io,"Single particle in ",P.mode," mode at x₀=",P.x," and v₀=",P.v)
 
 
 """
