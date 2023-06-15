@@ -97,7 +97,7 @@ struct sim
     nparts  :: Int
     sp      :: Vector{particle}
 
-    function sim(nparts::Int,x₀::Vector,v₀::Vector,mode::Symbol,Δt::VectorFloat,Bfield,lvol::Union{Int64,Vector{Int64}};gc_initial=true)
+    function sim(nparts::Int,x₀::Vector,v₀::Vector,mode::OrbitMode,Δt::VectorFloat,Bfield,lvol::Union{Int64,Vector{Int64}};gc_initial=true)
         
         if typeof(x₀) == Vector{Float64}
             # Ensure position can be read
