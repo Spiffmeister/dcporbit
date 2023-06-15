@@ -1,4 +1,6 @@
 using Pkg
+Pkg.add("Documenter")
+using Documenter
 Pkg.activate(".")
 # push!(LOAD_PATH,"./src/")
 
