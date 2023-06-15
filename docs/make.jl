@@ -11,3 +11,7 @@ makedocs(sitename="Discontinuous particle orbit solver",
     format=Documenter.HTML(prettyurls=false),
     modules = [dcporbit]
     )
+
+deploydocs(
+    repo = "github.com/Spiffmeister/dcporbit.jl.git"
+)
