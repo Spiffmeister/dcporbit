@@ -13,7 +13,7 @@ module dcporbit
     using Distributed
 
     include("Particle.jl")
-    include("analytic.jl")
+    include("Analytic.jl")
     include("event_location.jl")
     include("Integrators.jl")
     include("Plotting.jl")
