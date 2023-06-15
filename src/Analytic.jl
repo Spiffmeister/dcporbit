@@ -4,7 +4,9 @@
 
 
 
-
+"""
+    exact_particle{T<:Real}
+"""
 struct exact_particle{T<:Real}
     # Structure for hold the exact solutions to particles
     x           :: Array{T}
@@ -17,7 +19,9 @@ struct exact_particle{T<:Real}
 end
 
 
-
+"""
+    analytic_sim
+"""
 mutable struct analytic_sim
     # Container for multiple analytic particles
     nparts  :: Int64
@@ -36,6 +40,17 @@ end
 #===
     METHODS FOR SOLVING PARTICLES
 ===#
+"""
+    analytic_solve
+
+Methods
+```julia
+analytic_solve(p::particle,Bfield;crossing=true,eventfn=nothing)
+analytic_solve(simulation::sim,Bfield;crossing=true,eventfn=nothing::Union{Nothing,Function})
+analytic_solve(x₀::Vector{Float64},v₀::Vector{Float64},t::Vector{Float64},Bfield::Union{Function,Array{Function}};crossing=true,eventfn=nothing,lvol=1::Int64)
+```
+"""
+function analytic_solve end
 function analytic_solve(p::particle,Bfield;crossing=true,eventfn=nothing)
     # Method for taking in a particle and returning the analytic solve
     x₀ = p.gc[:,1]
@@ -47,7 +62,6 @@ function analytic_solve(p::particle,Bfield;crossing=true,eventfn=nothing)
     pe = analytic_solve(x₀,v₀,t,Bfield,crossing=crossing,eventfn=eventfn,lvol=lvol)
     return pe
 end
-
 function analytic_solve(simulation::sim,Bfield;crossing=true,eventfn=nothing::Union{Nothing,Function})
     # Method for taking in a simulation
     asym = analytic_sim(simulation.nparts)
@@ -182,34 +196,53 @@ end
 #===
     Supporting functions
 ===#
+"""
+    exact_x(v₀,X₀,b,tᵢ,ω)
+"""
 function exact_x(v₀,X₀,b,tᵢ,ω) #position
     x = v_para(v₀,b)*tᵢ' + 1/ω * norm(v₀)*(-b[3] * sin.(ω*tᵢ)' + b[2] * cos.(ω*tᵢ)') .+ X₀
     return x
 end
+"""
+    exact_v(v₀,b,tᵢ,ω)
+"""
 function exact_v(v₀,b,tᵢ,ω)
     v = v_para(v₀,b) .- norm(v₀)*(b[3] * cos.(ω*tᵢ)' + b[2] * sin.(ω*tᵢ)')
     return v
 end
+"""
+    v_para(v₀,b)
+"""
 function v_para(v₀,b) #parallel velocity
     return dot(v₀,b[1])*b[1]
 end
+"""
+    gc(x₀,v₀,B)
+"""
 function gc(x₀,v₀,B) #GC position
     return x₀ + cross(v₀,B)/norm(B,2)^2
 end
 
 ### Functions for computing the average drift ###
+"""
+    x_bar(v₀,b,τ,ω)
+"""
 function x_bar(v₀,b,τ,ω)
     # ONLY WORKS SINCE ω=1
     x_bar = dot(v₀,b)*b*τ + 2/ω*dot(v₀,[0,0,1])*cross([0,0,1],b)
     return x_bar
 end
-
+"""
+    average_orbit(x_bp,x_bm,τ_p,τ_m)
+"""
 function average_orbit(x_bp,x_bm,τ_p,τ_m)
     # Adds the average drift to the original position for adding to plots
     x_bar = (x_bp + x_bm)/(τ_p + τ_m)
     return x_bar
 end
-
+"""
+    magcoords(v,B)
+"""
 function magcoords(v,B)
     # Compute the field aligned coordinates
     B_0     = norm(B,2)
@@ -218,7 +251,9 @@ function magcoords(v,B)
     b3      = cross(b1,b2)
     return [b1,b2,b3]
 end
-
+"""
+    bound_time(ω,b)
+"""
 function bound_time(ω,b)
     # Compute the boundary crossing time
     τ = 2/ω * acot(-b[2][3]/b[3][3])

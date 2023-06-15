@@ -101,7 +101,9 @@ function run_sim!(f::sim,ODE,t_f;method=:RK4)
     # return f
 end
 
-
+"""
+    integrate!(ODE::Function,xv::Vector{Float64},t;eventfn=nothing,method=:RK4)
+"""
 function integrate!(ODE::Function,xv::Vector{Float64},t;eventfn=nothing,method=:RK4)
     # CURRENTLY NOT USED
     if method==:RK4
@@ -191,6 +193,7 @@ function RK4(fₓ::Function,x₀::Vector{Float64},t::Vector{Float64})
 end
 
 """
+    symplectic_euler(H::Function,x₀::Vector{Float64},t::Vector{Float64})
 """
 function symplectic_euler(H::Function,x₀::Vector{Float64},t::Vector{Float64})
     # Implicit eulers function.

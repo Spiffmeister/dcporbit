@@ -1,4 +1,7 @@
-
+"""
+    event_loc(dvdt::Function,x::Array{Float64},k::Array{Float64},h::Float64,t::Array{Float64};bound=0.,tol=1.e-14)
+Event location function using bootstrapping for higher order interpolation
+"""
 function event_loc(dvdt::Function,x::Array{Float64},k::Array{Float64},h::Float64,t::Array{Float64};bound=0.,tol=1.e-14)
     # Endpoint derivative evaluation
     f₁ = dvdt(x[:,2],t[2])
@@ -23,7 +26,9 @@ end
 #=
     Rootfinding methods
 =#
-
+"""
+    f_root!(f,df,x₀;maxits=20,atol=1.e-14)
+"""
 function f_root!(f,df,x₀;maxits=20,atol=1.e-14)
     x₀,converged = newtons!(f,df,x₀,maxits=maxits,atol=atol)
     if !converged
@@ -37,6 +42,9 @@ function f_root!(f,df,x₀;maxits=20,atol=1.e-14)
     return x₀
 end
 
+"""
+    newtons!(f,df,xₙ;maxits=20,atol=1.e-14)
+"""
 function newtons!(f,df,xₙ;maxits=20,atol=1.e-14)
     # xₙ = x₀
     # if df == Nothing
@@ -52,6 +60,9 @@ function newtons!(f,df,xₙ;maxits=20,atol=1.e-14)
     return xₙ, converged
 end
 
+"""
+    bisection(f::Function;maxits=50,atol=1.e-10,a=0.,b=1.)
+"""
 function bisection(f::Function;maxits=50,atol=1.e-10,a=0.,b=1.)
     
     converged = false
@@ -77,12 +88,23 @@ end
 
 
 #= INTERPOLATING FUNCTIONS =#
-
+"""
+    cubic_hermite(τ::Float64,h::Float64,x::Array{Float64},k::Array{Float64},f₁::Array{Float64})
+"""
 function cubic_hermite(τ::Float64,h::Float64,x::Array{Float64},k::Array{Float64},f₁::Array{Float64})
     bar_x = (1-τ)*x[:,1] + τ*x[:,2] + τ*(τ-1)*((1-2*τ)*(x[:,2]-x[:,1]) + (τ-1)*h*k[:,1] + τ*h*f₁)
     return bar_x
 end
+"""
+    boostrapped
 
+Methods:
+```julia
+    boostrapped(τ::Float64,h::Float64,x::Array{Float64},k₁::Array{Float64},f₁::Array{Float64},fₘ::Array{Float64})
+    boostrapped(τ::Float64,h::Float64,x::Array{Float64},k₁::Float64,f₁::Float64,fₘ::Float64)
+```
+"""
+function boostrapped end
 function boostrapped(τ::Float64,h::Float64,x::Array{Float64},k₁::Array{Float64},f₁::Array{Float64},fₘ::Array{Float64})
     # Vector function Bootstrapped to quartic
     d₀ = (τ-1)^2 * (15/4 * τ^2 + 2*τ + 1)
@@ -93,7 +115,6 @@ function boostrapped(τ::Float64,h::Float64,x::Array{Float64},k₁::Array{Float6
     tilde_x = d₀*x[:,1] + d₁*h*k₁ + d₂*x[:,2] + d₃*h*f₁ + d₄*h*fₘ
     return tilde_x
 end
-
 function boostrapped(τ::Float64,h::Float64,x::Array{Float64},k₁::Float64,f₁::Float64,fₘ::Float64)
     # Scalar function bootstrapped to quartic
     d₀ = (τ-1)^2 * (15/4 * τ^2 + 2*τ + 1)
@@ -105,6 +126,16 @@ function boostrapped(τ::Float64,h::Float64,x::Array{Float64},k₁::Float64,f₁
     return tilde_x
 end
 
+"""
+    dt_bootstrapped
+
+Methods:
+```julia
+dt_bootstrapped(τ::Float64,h::Float64,x::Array{Float64},k₁::Array{Float64},f₁::Array{Float64},fₘ::Array{Float64})
+dt_bootstrapped(τ::Float64,h::Float64,x::Array{Float64},k₁::Float64,f₁::Float64,fₘ::Float64)
+```
+"""
+function dt_bootstrapped end
 function dt_bootstrapped(τ::Float64,h::Float64,x::Array{Float64},k₁::Array{Float64},f₁::Array{Float64},fₘ::Array{Float64})
     # Derivative of vector function
     d₀ = 2*(τ-1)*(15/4*τ^2 + 2*τ + 1) + (τ-1)^2 * (15*τ/2 + 2)

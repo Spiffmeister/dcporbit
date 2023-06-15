@@ -20,8 +20,8 @@ Bfield(x,t) = [0.,0.,1.]
 p = particle(x₀,v₀,mode,Δt,Bfield)
 ODE = forces(Bfield)
 # Run the simulation
-@time solve_orbit!(p,ODE,t_f,method=:forward_eulers)
-# @time solve_orbit!(p,ODE,t_f,method=:RK4)
+# @time solve_orbit!(p,ODE,t_f,method=:forward_eulers)
+@time solve_orbit!(p,ODE,t_f,method=:RK4)
 
 # Compute exact solution
 pe1 = analytic_solve(x₀,v₀,p.t,Bfield,crossing=false)

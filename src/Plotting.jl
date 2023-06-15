@@ -9,7 +9,9 @@
 
 
 
-
+"""
+    plt_orbit(p::Union{particle,exact_particle};lab="Computed")
+"""
 function plt_orbit(p::Union{particle,exact_particle};lab="Computed")
     # Plot the solution in 3D
     plt = plot3d(p.x[1,:],p.x[2,:],p.x[3,:],label=lab,guidefontsize=16)
@@ -17,7 +19,9 @@ function plt_orbit(p::Union{particle,exact_particle};lab="Computed")
     return plt
 end
 
-
+"""
+    plt_gyroradius(v::Array,B::Function,t::Array)
+"""
 function plt_gyroradius(v::Array,B::Function,t::Array)
     # Gyoradius
     n = size(v)[2]

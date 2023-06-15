@@ -1,3 +1,8 @@
+"""
+    dcporbit
+
+Module for solving the particle orbit
+"""
 module dcporbit
 
     using LinearAlgebra

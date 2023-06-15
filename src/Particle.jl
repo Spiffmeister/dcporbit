@@ -90,6 +90,7 @@ Base.show(io::IO, P::particle) = print(io,"Single particle in ",P.mode," mode at
 
 
 """
+    sim
 """
 struct sim
     # Vector that holds particle
@@ -129,7 +130,9 @@ end
 #=====
     Particle based fns
 =====#
-
+"""
+    guiding_center(p::particle)
+"""
 function guiding_center(p::particle)
     gc = zeros(length(p.t))
     for i = 1:length(p.t)
@@ -137,7 +140,9 @@ function guiding_center(p::particle)
     end
     return gc
 end
-
+"""
+    guiding_center(v::Vector,B::Vector)
+"""
 function guiding_center(v::Vector,B::Vector)
     return m/q * cross(v,B)/norm(B,2)^2
 end
@@ -145,7 +150,9 @@ end
 #====
     EQUATIONS OF MOTION
 ====#
-
+"""
+    MagneticForce_GC(xv::Vector{Float64},t::Float64,B::Array)
+"""
 function MagneticForce_GC(xv::Vector{Float64},t::Float64,B::Array)
     x = xv[1:3]
     v = xv[4:6]
@@ -154,7 +161,9 @@ function MagneticForce_GC(xv::Vector{Float64},t::Float64,B::Array)
     xv = vcat(v,dvdt)
     return xv
 end
-
+"""
+    MagneticForce(xv::Vector{Float64},t::Float64,B::Vector)
+"""
 function MagneticForce(xv::Vector{Float64},t::Float64,B::Vector)
     x = xv[1:3]
     v = xv[4:6]
@@ -164,13 +173,17 @@ function MagneticForce(xv::Vector{Float64},t::Float64,B::Vector)
 end
 
 
-
+"""
+    MagneticForce_GC!(xv::Vector,B::Array)
+"""
 function MagneticForce_GC!(xv::Vector,B::Array)
     xv[1:3] .= dot(xv,B)/norm(B,2)^2 * B
     xv[4:6] .= 0.0
     xv
 end
-
+"""
+    MagneticForce!(xv::Vector,B::Vector)
+"""
 function MagneticForce!(xv::Vector,B::Vector)
     xv[1:3] .= q/m*cross(v,B)
     xv[4:6] .= 0.0
@@ -179,6 +192,8 @@ end
 
 
 
-
+"""
+    MagneticForce_Hamiltonian(qp::Vector{Float64},t::Float64,A::Function)
+"""
 function MagneticForce_Hamiltonian(qp::Vector{Float64},t::Float64,A::Function)
 end
