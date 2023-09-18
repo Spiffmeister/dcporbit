@@ -2,20 +2,21 @@
     Performing convergence study
 =#
 
-using Pkg
-Pkg.activate(".")
+# using Pkg
+# Pkg.activate(".")
 using dcporbit
 
 # Is this a guiding center intialisation?
 mode = FullOrbit
 # Set initial conditions
-x₀ = [0.,0.,0.]
+x₀ = [0.,0.,1.1]
 v₀ = [1.,0.,0.]
 # Set simulation parameters
-t_f = 10.0
+t_f = 1.0
 Δt = 1.e-3
 # Set the magnetic field
-Bfield(x,t) = [0.,0.,1.]
+α = π/6
+Bfield(x,t) = [cos(α),sin(α),0.0]
 # Initialise the particle
 p = particle(x₀,v₀,mode,Δt,Bfield)
 ODE = forces(Bfield)
@@ -24,13 +25,13 @@ ODE = forces(Bfield)
 @time solve_orbit!(p,ODE,t_f,method=:RK4)
 
 # Compute exact solution
-pe1 = analytic_solve(x₀,v₀,p.t,Bfield,crossing=false)
+pe = analytic_solve(x₀,v₀,p.t,Bfield,crossing=false)
 
-# pe2 = analytic_solve(p,Bfield,crossing=false)
 
 # Plot solutions
-p1 = dcporbit.plt_orbit(p)
-# p2 = orbit.plt_orbit(pe1)
-
+using Plots
+pyplot()
+plot3d(p.x[1,:],p.x[2,:],p.x[3,:])
+plot3d!(pe.x[1,:],pe.x[2,:],pe.x[3,:])
 
 

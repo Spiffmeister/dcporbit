@@ -47,16 +47,16 @@ Base.show(io::IO, F::forces) = print("Magnetic force function generated.")
 """
 mutable struct particle{T}
     # Position and time things
-    x           :: Array{T}
-    v           :: Array{T}
-    mode        :: OrbitMode
-    t           :: Array{T}
-    Δt          :: T
+    x           :: Array{T} # x y z
+    v           :: Array{T} # vx vy vz
+    mode        :: OrbitMode # FullOrbit or GuidingCentre mode
+    t           :: Array{T} # time
+    Δt          :: T # timestep
     # Functions
-    B           :: Array{T}
-    lvol        :: Vector{Int}
-    gc_init     :: Bool
-    gc          :: Array{T}
+    B           :: Array{T} # current magnetic field
+    lvol        :: Vector{Int} # magnetic field region
+    gc_init     :: Bool # was this initialised with guiding centre
+    gc          :: Array{T} # gc position
 
     # Constructor to build easier
     function particle(x::Vector{T},v::Vector{T},mode::OrbitMode,Δt::T,Bfield::Union{Function,Vector{Function}};
@@ -82,6 +82,9 @@ mutable struct particle{T}
     end
 end
 
+
+#=  =#
+# Base.getindex(p::particle,i) = p.x[:,i], p.v[:,i]
 # particle(x::Vector,v::Vector,mode::OrbitMode,Δt::Real,Bfield;gc_initial=true,lvol=1) where {T<:Real} = 
 #     particle(x,v,mode,Δt,Bfield,gc_initial,lvol)
 
@@ -145,6 +148,15 @@ end
 """
 function guiding_center(v::Vector,B::Vector)
     return m/q * cross(v,B)/norm(B,2)^2
+end
+"""
+    gyroradius
+"""
+function gyroradius(v::Vector,B::Vector)
+    return m/q * norm(cross(v,B))/norm(B,2)
+end
+function gyroradius(v_perp::TT,B::Vector{TT}) where TT
+    return m/q * v_perp/norm(B,2)
 end
 
 #====

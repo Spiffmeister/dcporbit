@@ -42,15 +42,11 @@ end
 ===#
 """
     analytic_solve
-
-Methods
-```julia
-analytic_solve(p::particle,Bfield;crossing=true,eventfn=nothing)
-analytic_solve(simulation::sim,Bfield;crossing=true,eventfn=nothing::Union{Nothing,Function})
-analytic_solve(x₀::Vector{Float64},v₀::Vector{Float64},t::Vector{Float64},Bfield::Union{Function,Array{Function}};crossing=true,eventfn=nothing,lvol=1::Int64)
-```
 """
 function analytic_solve end
+"""
+    analytic_solve(p::particle,Bfield;crossing=true,eventfn=nothing)
+"""
 function analytic_solve(p::particle,Bfield;crossing=true,eventfn=nothing)
     # Method for taking in a particle and returning the analytic solve
     x₀ = p.gc[:,1]
@@ -62,6 +58,9 @@ function analytic_solve(p::particle,Bfield;crossing=true,eventfn=nothing)
     pe = analytic_solve(x₀,v₀,t,Bfield,crossing=crossing,eventfn=eventfn,lvol=lvol)
     return pe
 end
+"""
+    analytic_solve(simulation::sim,Bfield;crossing=true,eventfn=nothing::Union{Nothing,Function})
+"""
 function analytic_solve(simulation::sim,Bfield;crossing=true,eventfn=nothing::Union{Nothing,Function})
     # Method for taking in a simulation
     asym = analytic_sim(simulation.nparts)
@@ -83,11 +82,16 @@ function analytic_solve(simulation::sim,Bfield;crossing=true,eventfn=nothing::Un
     return asym
 end
 
-#===
-    ANALYTIC SOLUTIONS FOR ORBITS
-===#
+#
+# ANALYTIC SOLUTIONS FOR ORBITS
+#
+"""
+    analytic_solve(x₀::Vector{Float64},v₀::Vector{Float64},t::Vector{Float64},Bfield::Union{Function,Array{Function}};crossing=true,eventfn=nothing,lvol=1::Int64)
+"""
 function analytic_solve(x₀::Vector{Float64},v₀::Vector{Float64},t::Vector{Float64},Bfield::Union{Function,Array{Function}};crossing=true,eventfn=nothing,lvol=1::Int64)
     # Works for static fields
+    maxvol = 2
+
     if typeof(Bfield) <: Function
         Bf = Bfield
     elseif typeof(Bfield) <: Array
@@ -97,19 +101,16 @@ function analytic_solve(x₀::Vector{Float64},v₀::Vector{Float64},t::Vector{Fl
     ω = [abs(q)/m * norm(Bf(x₀,t[1]))]
     x = x_b = x₀ - guiding_center(v₀,Bf(x₀,t[1]))
     v = v_b = v₀
-
+    
+    pB = zeros(Float64,(3,1))
+    pB .= Bf(x₀,t[1])
     x̄ = Array{Float64,2}(undef,3,0)
     b₁ = Array{Float64,2}(undef,3,0)
-
     # Crossing time
     τ_b = Vector{Float64}(undef,0)
 
     if !crossing
-        # If there are no crossings then solve the entire system at once
-        B = Bf(x₀,t)
-        b = magcoords(v₀,B)
-        x = exact_x(v₀,x₀,b,t,ω[1])
-        v = exact_v(v₀,b,t,ω[1])
+        _analytic_solve_nocrossing(x₀,v₀,t,Bf)
     end
     k = 0
     while crossing
@@ -138,7 +139,7 @@ function analytic_solve(x₀::Vector{Float64},v₀::Vector{Float64},t::Vector{Fl
             x = hcat(x,xᵢ)
             v = hcat(v,vᵢ)
             # Update the field to use
-            lvol = lvol + Int(sign(v_b[3,end]))
+            lvol = mod1(lvol+1,maxvol)
         else
             # If crossing time cannot be computed then iterate
             if length(τ_b) == 0
@@ -152,24 +153,24 @@ function analytic_solve(x₀::Vector{Float64},v₀::Vector{Float64},t::Vector{Fl
             xₜₘₚ = x[:,end]
             vₜₘₚ = v[:,end]
             while (t[i] < t[end])
-            # Loop over timesteps until boundary crossing
-            xₜₘₚ = hcat(xₜₘₚ,exact_x(v₀,x₀,b,tᵢ[i],ω[end]))
-            vₜₘₚ = hcat(vₜₘₚ,exact_v(v₀,b,tᵢ[i],ω[end]))
-            # x = hcat(x,exact_x(v₀,x₀,b,tᵢ[i],ω[end]))
-            # v = hcat(v,exact_v(v₀,b,tᵢ[i],ω[end]))
-            chk = eventfn(xₜₘₚ[:,end-1:end])
-            if chk < 0.
-                # If crossing detected comput the exact position
-                ex(t) = exact_x(v₀,x₀,b,t,ω[end])[3]
-                τ = find_zero(ex,(tᵢ[i-1],tᵢ[i+1]),Bisection(),atol=1.e-15)
-                x_b = hcat(x_b,exact_x(v₀,x₀,b,τ,ω[end]))
-                v_b = hcat(v_b,exact_v(v₀,b,τ,ω[end]))
-                x = hcat(x,xₜₘₚ[:,2:end-1])
-                v = hcat(v,vₜₘₚ[:,2:end-1])
-                append!(τ_b,τ)
-                lvol += Int(sign(v_b[3,end]))
-                t_f = τ #For exit condition
-                break
+                # Loop over timesteps until boundary crossing
+                xₜₘₚ = hcat(xₜₘₚ,exact_x(v₀,x₀,b,tᵢ[i],ω[end]))
+                vₜₘₚ = hcat(vₜₘₚ,exact_v(v₀,b,tᵢ[i],ω[end]))
+                # x = hcat(x,exact_x(v₀,x₀,b,tᵢ[i],ω[end]))
+                # v = hcat(v,exact_v(v₀,b,tᵢ[i],ω[end]))
+                chk = eventfn(xₜₘₚ[:,end-1],xₜₘₚ[:,end])
+                if chk < 0.
+                    # If crossing detected comput the exact position
+                    ex(t) = exact_x(v₀,x₀,b,t,ω[end])[3]
+                    τ = find_zero(ex,(tᵢ[i-1],tᵢ[i+1]),Bisection(),atol=1.e-15)
+                    x_b = hcat(x_b,exact_x(v₀,x₀,b,τ,ω[end]))
+                    v_b = hcat(v_b,exact_v(v₀,b,τ,ω[end]))
+                    x = hcat(x,xₜₘₚ[:,2:end-1])
+                    v = hcat(v,vₜₘₚ[:,2:end-1])
+                    append!(τ_b,τ)
+                    lvol = mod1(lvol+1,maxvol)
+                    t_f = τ #For exit condition
+                    break
                 end
                 i += 1
             end
@@ -183,16 +184,35 @@ function analytic_solve(x₀::Vector{Float64},v₀::Vector{Float64},t::Vector{Fl
         # Set all params for next phase
         v₀ = v_b[:,end]
         x₀ = gc(x_b[:,end],v₀,Bfield[lvol](x_b[:,end],t))
-        if t_f >= t[end]
+        if t_f >= t[end] # If not finished yet
             τ_b[end] > t[end] ? τ_b=τ_b[1:end-1] : τ_b
             # If finished
             break
         end
-
     end
     return exact_particle(x,v,x_b,v_b,t,τ_b,x̄)
 end
 
+
+function _analytic_solve_nocrossing(x₀::Vector{T},v₀::Vector{T},t::Vector{T},Bf::Function) where T
+    ω = [abs(q)/m * norm(Bf(x₀,t[1]))]
+    x = x_b = x₀ - guiding_center(v₀,Bf(x₀,t[1]))
+    v = v_b = v₀
+
+    b₁ = Array{T,2}(undef,3,0)
+    
+    # If there are no crossings then solve the entire system at once
+    B = Bf(x₀,t[1])
+    b = magcoords(v₀,B)
+    x = exact_x(v₀,x₀,b,t,ω[1])
+    v = exact_v(v₀,b,t,ω[1])
+
+    x̄ = Vector{T}(undef,0)
+    τ_b = Vector{T}(undef,0)
+
+
+    return exact_particle(x,v,x_b,v_b,t,τ_b,x̄)
+end
 #===
     Supporting functions
 ===#

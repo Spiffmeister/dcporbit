@@ -16,6 +16,7 @@ module dcporbit
     include("Analytic.jl")
     include("event_location.jl")
     include("Integrators.jl")
+    include("timesolver.jl")
     include("Plotting.jl")
 
     export FullOrbit, FO, GuidingCentre, GC
